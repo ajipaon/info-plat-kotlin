@@ -1,8 +1,6 @@
 package com.paondev.infoplat.ui.screen
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,6 +23,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -93,12 +92,12 @@ private val allProvinces = listOf(
     ),
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectProvinceScreen(
     onBackClick: () -> Unit = {},
     onProvinceClick: (Province) -> Unit = {}
 ) {
-    val isDark = isSystemInDarkTheme()
     var searchQuery by remember { mutableStateOf("") }
 
     val filteredProvinces = remember(searchQuery) {
@@ -109,169 +108,131 @@ fun SelectProvinceScreen(
         }
     }
 
-    val bgColor = if (isDark) BackgroundDark else Color.White
-    val textPrimary = if (isDark) Color.White else Slate900
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(if (isDark) BackgroundDark else BackgroundLight)
-    ) {
-        // Main content container — max width 430dp centered
-        Box(
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        bottomBar = {
+            SelectProvinceBottomNav()
+        }
+    ) { padding ->
+        Column(
             modifier = Modifier
-                .widthIn(max = 430.dp)
-                .fillMaxHeight()
-                .align(Alignment.TopCenter)
-                .background(bgColor)
-                .shadow(elevation = 8.dp)
+                .fillMaxSize()
+                .padding(padding)
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            // Header
+            SelectProvinceHeader(
+                onBackClick = onBackClick
+            )
 
-                // ── Header ───────────────────────────────────────────────
-                ProvinceHeader(
-                    onBackClick = onBackClick,
-                    isDark = isDark,
-                    textPrimary = textPrimary
+            // Search Bar
+            SelectProvinceSearchBar(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it }
+            )
+
+            // Section Title
+            Text(
+                text = "ALL PROVINCES",
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.5.sp,
+                modifier = Modifier.padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 8.dp,
+                    bottom = 12.dp
                 )
+            )
 
-                // ── Search Bar ───────────────────────────────────────────
-                ProvinceSearchBar(
-                    query = searchQuery,
-                    onQueryChange = { searchQuery = it },
-                    isDark = isDark
-                )
-
-                // ── Province List ─────────────────────────────────────────
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentPadding = PaddingValues(bottom = 90.dp)
-                ) {
+            // Province List
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                if (filteredProvinces.isEmpty()) {
                     item {
-                        Text(
-                            text = "ALL PROVINCES",
-                            color = Slate500,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.5.sp,
-                            modifier = Modifier.padding(
-                                start = 16.dp,
-                                end = 16.dp,
-                                top = 8.dp,
-                                bottom = 12.dp
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 48.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Provinsi tidak ditemukan",
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                fontSize = 14.sp
                             )
-                        )
+                        }
                     }
-
-                    if (filteredProvinces.isEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 48.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Provinsi tidak ditemukan",
-                                    color = Slate400,
-                                    fontSize = 14.sp
-                                )
-                            }
-                        }
-                    } else {
-                        items(filteredProvinces) { province ->
-                            ProvinceItem(
-                                province = province,
-                                isDark = isDark,
-                                textPrimary = textPrimary,
-                                onClick = { onProvinceClick(province) }
-                            )
-                        }
+                } else {
+                    items(filteredProvinces) { province ->
+                        SelectProvinceItem(
+                            province = province,
+                            onClick = { onProvinceClick(province) }
+                        )
                     }
                 }
             }
-
-            // ── Bottom Navigation Bar ─────────────────────────────────────
-            BottomNavBar(
-                isDark = isDark,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
         }
     }
 }
 
-// ── Header Component ─────────────────────────────────────────────────────────
 @Composable
-private fun ProvinceHeader(
-    onBackClick: () -> Unit,
-    isDark: Boolean,
-    textPrimary: Color
+private fun SelectProvinceHeader(
+    onBackClick: () -> Unit
 ) {
-    val headerBg = if (isDark)
-        BackgroundDark.copy(alpha = 0.9f)
-    else
-        Color.White.copy(alpha = 0.9f)
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(headerBg)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Back button
-        Box(
+    Column {
+        Row(
             modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .clickable { onBackClick() }
-                .background(Color.Transparent),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
-                tint = Primary,
-                modifier = Modifier.size(24.dp)
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Text(
+                text = "Select Province",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 40.dp),
+                textAlign = TextAlign.Center
             )
         }
 
-        // Title
-        Text(
-            text = "Select Province",
-            color = textPrimary,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 40.dp),  // offset agar titel benar-benar di tengah
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+            thickness = 1.dp
         )
     }
-
-    HorizontalDivider(
-        color = Primary.copy(alpha = 0.1f),
-        thickness = 1.dp
-    )
 }
 
-// ── Search Bar Component ──────────────────────────────────────────────────────
 @Composable
-private fun ProvinceSearchBar(
+private fun SelectProvinceSearchBar(
     query: String,
-    onQueryChange: (String) -> Unit,
-    isDark: Boolean
+    onQueryChange: (String) -> Unit
 ) {
-    val fieldBg = if (isDark) Slate800 else Slate100
-
     Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(fieldBg)
+                .background(MaterialTheme.colorScheme.surface)
                 .height(48.dp)
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -279,7 +240,7 @@ private fun ProvinceSearchBar(
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = "Search",
-                tint = Slate400,
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                 modifier = Modifier.size(22.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
@@ -288,16 +249,16 @@ private fun ProvinceSearchBar(
                 onValueChange = onQueryChange,
                 singleLine = true,
                 textStyle = TextStyle(
-                    color = if (isDark) Color.White else Slate900,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 15.sp
                 ),
-                cursorBrush = SolidColor(Primary),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.tertiary),
                 modifier = Modifier.weight(1f),
                 decorationBox = { inner ->
                     if (query.isEmpty()) {
                         Text(
                             text = "Search province or region",
-                            color = Slate400,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                             fontSize = 15.sp
                         )
                     }
@@ -308,7 +269,7 @@ private fun ProvinceSearchBar(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Clear",
-                    tint = Slate400,
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                     modifier = Modifier
                         .size(20.dp)
                         .clickable { onQueryChange("") }
@@ -318,22 +279,16 @@ private fun ProvinceSearchBar(
     }
 }
 
-// ── Province Item Component ───────────────────────────────────────────────────
 @Composable
-private fun ProvinceItem(
+private fun SelectProvinceItem(
     province: Province,
-    isDark: Boolean,
-    textPrimary: Color,
     onClick: () -> Unit
 ) {
-    val itemBg = if (isDark) BackgroundDark else Color.White
-    val dividerColor = if (isDark) Slate800 else Slate100
-
     Column {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(itemBg)
+                .background(MaterialTheme.colorScheme.surface)
                 .clickable { onClick() }
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -343,10 +298,10 @@ private fun ProvinceItem(
                 modifier = Modifier
                     .size(52.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(Primary.copy(alpha = 0.1f))
+                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f))
                     .border(
                         width = 1.dp,
-                        color = Primary.copy(alpha = 0.2f),
+                        color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(10.dp)
                     )
             ) {
@@ -364,7 +319,7 @@ private fun ProvinceItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = province.name,
-                    color = textPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
@@ -373,7 +328,7 @@ private fun ProvinceItem(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = province.polda,
-                    color = Slate500,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -384,20 +339,19 @@ private fun ProvinceItem(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = "Select",
-                tint = Slate400,
+                tint = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.size(22.dp)
             )
         }
 
         HorizontalDivider(
-            color = dividerColor,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
             thickness = 1.dp,
             modifier = Modifier.padding(start = 84.dp)
         )
     }
 }
 
-// ── Bottom Navigation Bar ─────────────────────────────────────────────────────
 private enum class NavItem(
     val label: String,
     val icon: ImageVector,
@@ -410,51 +364,55 @@ private enum class NavItem(
 }
 
 @Composable
-private fun BottomNavBar(
-    isDark: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val barBg = if (isDark)
-        BackgroundDark.copy(alpha = 0.97f)
-    else
-        Color.White.copy(alpha = 0.97f)
-
+private fun SelectProvinceBottomNav() {
     var selected by remember { mutableIntStateOf(1) } // CheckTax aktif
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        HorizontalDivider(
-            color = if (isDark) Slate800 else Slate100,
-            thickness = 1.dp
-        )
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                RoundedCornerShape(0.dp)
+            )
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(barBg)
-                .padding(start = 8.dp, end = 8.dp, top = 10.dp, bottom = 24.dp),
+                .navigationBarsPadding()
+                .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
             NavItem.entries.forEachIndexed { index, item ->
-                val isActive = index == selected
+                val isSelected = index == selected
                 Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { selected = index },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { selected = index }
+                        .padding(8.dp)
                 ) {
                     Icon(
                         imageVector = item.icon,
                         contentDescription = item.label,
-                        tint = if (isActive) Primary else Slate400,
+                        tint = if (isSelected)
+                            MaterialTheme.colorScheme.tertiary
+                        else
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = item.label,
-                        color = if (isActive) Primary else Slate400,
+                        color = if (isSelected)
+                            MaterialTheme.colorScheme.tertiary
+                        else
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         fontSize = 10.sp,
-                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         letterSpacing = 0.5.sp
                     )
                 }
@@ -463,8 +421,10 @@ private fun BottomNavBar(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF101922, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true)
 @Composable
-fun SelectProvinceScreenDarkPreview() {
-    SelectProvinceScreen()
+fun SelectProvinceScreenPreview() {
+    InfoPlatTheme {
+        SelectProvinceScreen()
+    }
 }

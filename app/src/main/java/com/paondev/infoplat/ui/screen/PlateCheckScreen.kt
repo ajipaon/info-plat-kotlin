@@ -1,9 +1,6 @@
 package com.paondev.infoplat.ui.screen
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,14 +10,16 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
@@ -28,6 +27,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -36,13 +36,6 @@ import com.paondev.infoplat.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlateCheckScreen() {
-    val isDark = isSystemInDarkTheme()
-    val bgColor = if (isDark) BackgroundDark else BackgroundLight
-    val surfaceColor = if (isDark) Slate800 else Color.White
-    val textColor = if (isDark) Color.White else Slate900
-    val subTextColor = if (isDark) Slate400 else Slate500
-    val borderColor = if (isDark) Slate700 else Slate200
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -50,13 +43,13 @@ fun PlateCheckScreen() {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = Primary.copy(alpha = 0.1f),
+                            color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
                             modifier = Modifier.padding(end = 12.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.DirectionsCar,
                                 contentDescription = null,
-                                tint = Primary,
+                                tint = MaterialTheme.colorScheme.tertiary,
                                 modifier = Modifier.padding(8.dp)
                             )
                         }
@@ -65,40 +58,36 @@ fun PlateCheckScreen() {
                             style = TextStyle(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp,
-                                color = textColor
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         )
                     }
                 },
                 actions = {
                     Box(modifier = Modifier.padding(end = 8.dp)) {
-                        IconButton(onClick = { /* TODO */ }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Notifications,
-                                contentDescription = "Notifications",
-                                tint = subTextColor
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(top = 10.dp, end = 10.dp)
-                                .size(10.dp)
-                                .background(Color.Red, CircleShape)
-                                .border(2.dp, bgColor, CircleShape)
-                        )
+//                        IconButton(onClick = { /* TODO */ }) {
+//                            Icon(
+//                                imageVector = Icons.Outlined.Notifications,
+//                                contentDescription = "Notifications",
+//                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+//                            )
+//                        }
+//                        Box(
+//                            modifier = Modifier
+//                                .align(Alignment.TopEnd)
+//                                .padding(top = 10.dp, end = 10.dp)
+//                                .size(10.dp)
+//                                .background(Color.Red, CircleShape)
+//                                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+//                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = bgColor.copy(alpha = 0.8f)
-                ),
-                modifier = Modifier.statusBarsPadding()
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         },
-        bottomBar = {
-            BottomNavigationBar(isDark)
-        },
-        containerColor = bgColor
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -109,19 +98,19 @@ fun PlateCheckScreen() {
         ) {
             item {
                 Spacer(modifier = Modifier.height(8.dp))
-                ProvinceSelectorCard(surfaceColor, borderColor, textColor, subTextColor)
+                ProvinceSelectorCard()
             }
 
             item {
-                HeroSection(textColor, subTextColor, surfaceColor, borderColor, isDark)
+                PlateCheckHeroSection()
             }
 
             item {
-                RecentSearchesHeader(textColor)
+                RecentSearchesHeader()
             }
 
             items(recentSearchesRevised) { search ->
-                RecentSearchCard(search, surfaceColor, borderColor, textColor, subTextColor)
+                RecentSearchCard(search)
             }
 
             item {
@@ -132,12 +121,13 @@ fun PlateCheckScreen() {
 }
 
 @Composable
-fun ProvinceSelectorCard(surfaceColor: Color, borderColor: Color, textColor: Color, subTextColor: Color) {
-    Surface(
+fun ProvinceSelectorCard() {
+    Card(
         shape = RoundedCornerShape(16.dp),
-        color = surfaceColor,
-        border = androidx.compose.foundation.BorderStroke(1.dp, borderColor),
-        shadowElevation = 1.dp
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
@@ -146,13 +136,13 @@ fun ProvinceSelectorCard(surfaceColor: Color, borderColor: Color, textColor: Col
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Primary.copy(alpha = 0.1f), CircleShape),
+                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.LocationOn,
                     contentDescription = null,
-                    tint = Primary,
+                    tint = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -166,7 +156,7 @@ fun ProvinceSelectorCard(surfaceColor: Color, borderColor: Color, textColor: Col
                     style = TextStyle(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = subTextColor,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         letterSpacing = 0.5.sp
                     )
                 )
@@ -175,13 +165,13 @@ fun ProvinceSelectorCard(surfaceColor: Color, borderColor: Color, textColor: Col
                     style = TextStyle(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = textColor
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 )
             }
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = Primary.copy(alpha = 0.05f),
+                color = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.clickable { /* TODO */ }
             ) {
                 Text(
@@ -190,7 +180,7 @@ fun ProvinceSelectorCard(surfaceColor: Color, borderColor: Color, textColor: Col
                     style = TextStyle(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Primary
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 )
             }
@@ -199,41 +189,36 @@ fun ProvinceSelectorCard(surfaceColor: Color, borderColor: Color, textColor: Col
 }
 
 @Composable
-fun HeroSection(
-    textColor: Color,
-    subTextColor: Color,
-    surfaceColor: Color,
-    borderColor: Color,
-    isDark: Boolean
-) {
+fun PlateCheckHeroSection() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = "Check Vehicle Details",
+            text = "Cek pajak kendaraan",
             style = TextStyle(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = textColor,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
         )
         Text(
-            text = "Enter the license plate number for the selected province below.",
+            text = "Masukkan plat nomor kendaraan",
             style = TextStyle(
                 fontSize = 14.sp,
-                color = subTextColor,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 textAlign = TextAlign.Center
             ),
             modifier = Modifier.padding(top = 8.dp, bottom = 32.dp, start = 16.dp, end = 16.dp)
         )
 
-        Surface(
+        Card(
             shape = RoundedCornerShape(20.dp),
-            color = surfaceColor,
-            border = androidx.compose.foundation.BorderStroke(1.dp, borderColor),
-            shadowElevation = 2.dp
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                LicensePlateInputRevised(isDark)
+                LicensePlateInput()
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -242,121 +227,120 @@ fun HeroSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
-                        .shadow(4.dp, RoundedCornerShape(12.dp), spotColor = Primary.copy(alpha = 0.2f)),
+                        .shadow(
+                            4.dp,
+                            RoundedCornerShape(12.dp),
+                            spotColor = MaterialTheme.colorScheme.tertiary
+                        ),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
                     Icon(Icons.Default.Search, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Check Tax Status", fontWeight = FontWeight.Bold)
+                    Text("Cek Pajak", fontWeight = FontWeight.Bold)
                 }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Divider(modifier = Modifier.weight(1f), color = if (isDark) Slate700 else Slate100)
-                    Text(
-                        text = "OR USE CAMERA",
-                        style = TextStyle(
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Slate400,
-                            letterSpacing = 1.sp
-                        ),
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    Divider(modifier = Modifier.weight(1f), color = if (isDark) Slate700 else Slate100)
-                }
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(vertical = 16.dp),
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    HorizontalDivider(
+//                        modifier = Modifier.weight(1f),
+//                        thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+//                    )
+//                    Text(
+//                        text = "OR USE CAMERA",
+//                        style = TextStyle(
+//                            fontSize = 10.sp,
+//                            fontWeight = FontWeight.Bold,
+//                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+//                            letterSpacing = 1.sp
+//                        ),
+//                        modifier = Modifier.padding(horizontal = 16.dp)
+//                    )
+//                    HorizontalDivider(
+//                        modifier = Modifier.weight(1f),
+//                        thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+//                    )
+//                }
 
-                OutlinedButton(
-                    onClick = { /* TODO */ },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, if (isDark) Slate600 else Slate200),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = if (isDark) Slate700.copy(alpha = 0.5f) else Slate50,
-                        contentColor = if (isDark) Slate200 else Slate700
-                    )
-                ) {
-                    Icon(Icons.Default.PhotoCamera, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Scan Plate", fontWeight = FontWeight.Bold)
-                }
+//                OutlinedButton(
+//                    onClick = { /* TODO */ },
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .height(56.dp),
+//                    shape = RoundedCornerShape(12.dp),
+//                    colors = ButtonDefaults.outlinedButtonColors(
+//                        contentColor = MaterialTheme.colorScheme.tertiary
+//                    ),
+//                    border = ButtonDefaults.outlinedButtonBorder(
+//                        enabled = true,
+////                        shape = RoundedCornerShape(12.dp)
+//                    ).copy(
+//                        brush = SolidColor(MaterialTheme.colorScheme.tertiary)
+//                    )
+//                ) {
+//                    Icon(
+//                        Icons.Default.PhotoCamera,
+//                        contentDescription = null,
+//                        tint = MaterialTheme.colorScheme.tertiary
+//                    )
+//                    Spacer(modifier = Modifier.width(8.dp))
+//                    Text(
+//                        "Scan Plate",
+//                        fontWeight = FontWeight.Bold,
+//                        color = MaterialTheme.colorScheme.tertiary
+//                    )
+//                }
             }
         }
     }
 }
 
 @Composable
-fun LicensePlateInputRevised(isDark: Boolean) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Slate900)
-            .border(4.dp, Slate800, RoundedCornerShape(12.dp))
-            .padding(4.dp)
-    ) {
-        // ID Strip
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .fillMaxHeight()
-                .width(32.dp)
-                .background(Primary)
-                .padding(vertical = 16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    "ID",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 8.sp,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Box(modifier = Modifier.size(width = 16.dp, height = 2.dp).background(Color.White.copy(alpha = 0.4f)))
-            }
-        }
-
-        // Bolts
-        BoltRevised(Modifier.align(Alignment.TopStart).padding(top = 8.dp, start = 40.dp))
-        BoltRevised(Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 8.dp))
-        BoltRevised(Modifier.align(Alignment.BottomStart).padding(bottom = 8.dp, start = 40.dp))
-        BoltRevised(Modifier.align(Alignment.BottomEnd).padding(bottom = 8.dp, end = 8.dp))
-
+fun LicensePlateInput() {
+    Box {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp)
-                .padding(start = 32.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color.White)
-                .border(2.dp, Slate900, RoundedCornerShape(8.dp)),
+                .padding(4.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.background)
+                .border(2.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(8.dp)),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
             PlateTextField(placeholder = "B", length = 2, modifier = Modifier.width(50.dp), defaultValue = "B")
-            Text("•", color = Slate300, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            Text(
+                "•",
+                color = MaterialTheme.colorScheme.tertiary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
             PlateTextField(placeholder = "1234", length = 4, modifier = Modifier.width(90.dp))
-            Text("•", color = Slate300, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            Text(
+                "•",
+                color = MaterialTheme.colorScheme.tertiary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
             PlateTextField(placeholder = "XYZ", length = 3, modifier = Modifier.width(60.dp))
         }
     }
 }
 
 @Composable
-fun BoltRevised(modifier: Modifier) {
+fun Bolt(modifier: Modifier) {
     Box(
         modifier = modifier
             .size(6.dp)
-            .background(Slate300, CircleShape)
+            .background(MaterialTheme.colorScheme.tertiary, CircleShape)
             .shadow(1.dp, CircleShape)
     )
 }
@@ -369,19 +353,20 @@ fun PlateTextField(placeholder: String, length: Int, modifier: Modifier, default
         onValueChange = { if (it.length <= length) text = it.uppercase() },
         modifier = modifier,
         textStyle = TextStyle(
-            color = Slate900,
+            color = MaterialTheme.colorScheme.tertiary,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
             textAlign = TextAlign.Center
         ),
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.tertiary),
         decorationBox = { innerTextField ->
             Box(contentAlignment = Alignment.Center) {
                 if (text.isEmpty()) {
                     Text(
                         placeholder,
-                        color = Slate200,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace
@@ -394,7 +379,7 @@ fun PlateTextField(placeholder: String, length: Int, modifier: Modifier, default
 }
 
 @Composable
-fun RecentSearchesHeader(textColor: Color) {
+fun RecentSearchesHeader() {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -405,7 +390,7 @@ fun RecentSearchesHeader(textColor: Color) {
             style = TextStyle(
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = textColor
+                color = MaterialTheme.colorScheme.onSurface
             )
         )
         Text(
@@ -413,7 +398,7 @@ fun RecentSearchesHeader(textColor: Color) {
             style = TextStyle(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
-                color = Primary
+                color = MaterialTheme.colorScheme.tertiary
             ),
             modifier = Modifier.clickable { /* TODO */ }
         )
@@ -422,16 +407,13 @@ fun RecentSearchesHeader(textColor: Color) {
 
 @Composable
 fun RecentSearchCard(
-    search: RecentSearch,
-    surfaceColor: Color,
-    borderColor: Color,
-    textColor: Color,
-    subTextColor: Color
+    search: RecentSearch
 ) {
-    Surface(
+    Card(
         shape = RoundedCornerShape(12.dp),
-        color = surfaceColor,
-        border = androidx.compose.foundation.BorderStroke(1.dp, borderColor),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .clickable { /* TODO */ }
@@ -445,7 +427,7 @@ fun RecentSearchCard(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Slate100),
+                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
                 if (search.imageUrl != null) {
@@ -453,13 +435,13 @@ fun RecentSearchCard(
                         model = search.imageUrl,
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Cover
+                        contentScale = ContentScale.Crop
                     )
                 } else {
                     Icon(
                         imageVector = Icons.Default.NoPhotography,
                         contentDescription = null,
-                        tint = Slate400,
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -474,24 +456,26 @@ fun RecentSearchCard(
                     Text(
                         text = search.plate,
                         modifier = Modifier
-                            .background(if (isSystemInDarkTheme()) Slate900 else Slate100, RoundedCornerShape(4.dp))
-                            .border(1.dp, if (isSystemInDarkTheme()) Slate700 else Slate200, RoundedCornerShape(4.dp))
+                            .background(
+                                MaterialTheme.colorScheme.background,
+                                RoundedCornerShape(4.dp)
+                            )
                             .padding(horizontal = 6.dp, vertical = 2.dp),
                         style = TextStyle(
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = textColor
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    StatusBadgeRevised(search.statusLabel, search.status)
+                    StatusBadge(search.statusLabel, search.status)
                 }
                 Text(
                     text = search.carModel,
                     style = TextStyle(
                         fontSize = 14.sp,
-                        color = subTextColor
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     ),
                     modifier = Modifier.padding(top = 4.dp)
                 )
@@ -500,18 +484,18 @@ fun RecentSearchCard(
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = Slate400
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
             )
         }
     }
 }
 
 @Composable
-fun StatusBadgeRevised(label: String, status: VehicleStatus) {
+fun StatusBadge(label: String, status: VehicleStatus) {
     val (bgColor, textColor) = when (status) {
-        VehicleStatus.CLEAN -> StatusGreenBg to StatusGreen
-        VehicleStatus.STOLEN -> StatusRedBg to StatusRed
-        VehicleStatus.TAX_DUE -> StatusYellowBg to StatusYellow
+        VehicleStatus.CLEAN -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.onPrimary
+        VehicleStatus.STOLEN -> Color.Red to Color.White
+        VehicleStatus.TAX_DUE -> Color(0xFFFFA500) to Color.White
     }
 
     Surface(
@@ -533,65 +517,26 @@ fun StatusBadgeRevised(label: String, status: VehicleStatus) {
 }
 
 @Composable
-fun BottomNavigationBar(isDark: Boolean) {
-    val navColor = if (isDark) Slate900 else Color.White
-    val borderColor = if (isDark) Slate800 else Slate200
-
-    Surface(
-        color = navColor,
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(width = 1.dp, color = borderColor, shape = RoundedCornerShape(0.dp))
-            .navigationBarsPadding()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp, top = 8.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            NavItem(Icons.Filled.Home, "Home", true)
-            NavItem(Icons.Default.History, "History", false)
-            
-            // Scan Button
-            Box(
-                modifier = Modifier
-                    .offset(y = (-24).dp)
-                    .size(56.dp)
-                    .shadow(8.dp, CircleShape, spotColor = Primary.copy(alpha = 0.4f))
-                    .background(Primary, CircleShape)
-                    .border(4.dp, navColor, CircleShape)
-                    .clickable { /* TODO */ },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.CenterFocusStrong,
-                    contentDescription = "Scan",
-                    tint = Color.White,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-
-            NavItem(Icons.Default.Favorite, "Saved", false)
-            NavItem(Icons.Default.Settings, "Settings", false)
-        }
-    }
-}
-
-@Composable
-fun NavItem(icon: ImageVector, label: String, isSelected: Boolean) {
+fun NavItemPlateCheck(
+    icon: ImageVector,
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
-            .clickable { /* TODO */ }
+            .clickable { onClick() }
             .padding(8.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = if (isSelected) Primary else Slate400,
+            tint = if (isSelected)
+                MaterialTheme.colorScheme.tertiary
+            else
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
             modifier = Modifier.size(24.dp)
         )
         Text(
@@ -599,7 +544,10 @@ fun NavItem(icon: ImageVector, label: String, isSelected: Boolean) {
             style = TextStyle(
                 fontSize = 10.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) Primary else Slate400
+                color = if (isSelected)
+                    MaterialTheme.colorScheme.tertiary
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
         )
     }
@@ -632,3 +580,11 @@ val recentSearchesRevised = listOf(
         imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuCRxHOlUzd6AUR6ZwuvdDNyv3fxy0UjjGLa56IDQKjWRu-ZmVbYMk-PD6Yfhp4hcUlr1iJ9lo28Ax41b0xEPTLXp3Pe9HVvrINxhB_xsUUd2pRTyvIYy5zkfvI5OAGjwEKVh9W8-kbtlEZj2FESYIOPDriMpTfm8QRIGhohDKlxlFRVa4eEuHHQtSL72RUsE3Nke6ujZo9sAfHJhSSwzaEL1Vw0rQmoOImPcM2TbmyZqGgNYqLKFRgTpIYwDR1wxyaEr34qTNAhdjRd"
     )
 )
+
+@Preview(showBackground = false)
+@Composable
+fun PlateCheckScreenPreview() {
+    InfoPlatTheme {
+        PlateCheckScreen()
+    }
+}
