@@ -29,68 +29,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.paondev.infoplat.data.Province
+import com.paondev.infoplat.data.allProvinces
 import com.paondev.infoplat.ui.theme.*
-
-// Data model untuk provinsi
-data class Province(
-    val name: String,
-    val polda: String,
-    val imageUrl: String
-)
-
-// Data dummy semua provinsi
-private val allProvinces = listOf(
-    Province(
-        name = "DKI Jakarta",
-        polda = "Polda Metro Jaya",
-        imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuBxgbk_SKvei2gbuNxwhxwqNbs6nhE3XeZrJZRIVDPL0Mc_ud1Tsr6QZQ-bXBii1XX2gS5wvDLvb1a8SUgVIqkENoFfN4_rNQQ_VsOfErXlfMbnBf5-wotuUpPp1vBk-HSd132H8ut_RYVCaQ2X6QcYHRNondvlLPxu-ll-mFPSYa6_BlHUeZRk61WLzxw9vIBcH05Q5b4NLGQu-P9vvXCDtHvZTXJMZtu-Fz4qVWThleeDKQUeTWr1g42URnTMuJ_baLz7Q88UHnd_"
-    ),
-    Province(
-        name = "Jawa Barat",
-        polda = "Polda Jawa Barat",
-        imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuCObsHGzKUN3me-OvDBx7SjOU2tUpv_vABUQEC3WOYR_x84_B6qUhawCRkEqbL_g2y5Fw9FPWx7Iw-lLpVClHZMIeizVANbQ3D_l2XNcdrqaFF_Io3hqJqbd6OVo-GI_uNxrOR5VakQFtLQLrICq8J-XgAqSFgVMDZ30iNTdFvbUvSwWG9deHTh_uOoKNf_MZ4FtwcAmWgs-49rhlAF9YZyrU6Ijypy7Uho8jeUpSfvJhq3aaFBfQHmRpi6zyKrVT73xS1GEqIzQ6vD"
-    ),
-    Province(
-        name = "Jawa Tengah",
-        polda = "Polda Jawa Tengah",
-        imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuA7dK6zSQEFBQcL29EINtLeID64pSSp8KXVfjM509074OWVV0L61_JsyimylzTgi8_tPGVVpUrOb2yJoE0xfTuYprXmXs8LCKNXLe6Tq8gG6tAl1TlXHPON2lur5djTdHg7LxsVW74_AO5Zm1N5LEvmWMCotz53BGLJxdpRUgt-WuNnVx8YRPiLMT0ThKwaB-Ue8UiWCkZJ2iJ863rq_KukZ_UVfBeplPwWXAvsxHhn6ZkrIBQoqiM7gABAaXut2kmm9CuhLPcieFFh"
-    ),
-    Province(
-        name = "Jawa Timur",
-        polda = "Polda Jawa Timur",
-        imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDro4ayENof9jIPTax78bBSl5Oi_eYJzJb232bPQ3QjMkV4BnGH5NhRC6pMQWIemjvai32v1m_J04CKPtMKAxZIig9O8b_Guam_hoskxaN2NqrGqLuzLnB34ITWSIjAlHrm8w5QNhXkpdIypAGOs5-cGZMBgB-dMem5lVhM2zVUP7dzAn4KT00-JkaOn0iGxSuOLIyfOvV0cRJRPin7v1Co-RKZNM0gmNJbKzEhmoPWrBXOe0kfR1oP5IXiwNPbc8cyXq-Hx9WUhGoQ"
-    ),
-    Province(
-        name = "Bali",
-        polda = "Polda Bali",
-        imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDIMiujqSXV4jiw-mklIWOSGhMjTKdMewK8GYF9TMvOuWTo2u9i0fSY7uVrkJNmcz8IY4D4m3Q8P1jZg0iNCpeLK8uW1QHIPKsAde6tMTfc68PqKMBQ0liZcWdzNU_rVkHnNDfjNnnMpLigwhBGjURZwa_CiiKnR9cVFyHi6jOmkVRGvlH4W7GB6seqR4gGjnvnIoYvwpLwP98UwZKMoaHP-9NImpDWefxcWIH0q8dI7hMU4Rwl8StUDtWY5J3KmcKjSyTpUMireutp"
-    ),
-    Province(
-        name = "Banten",
-        polda = "Polda Banten",
-        imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuCQK1jSfqjkZMkPdjRnYe2Qh70T9GlHn6vIZxCzkIxoujG9I90nmHedJMtP3fidspjlePv9CjoqLtW7thR8SuI0tIuE2cGLBWxeOMPTVRDl_qIDq_G8NYRGN39NAYSLNS8gMM5BC7PkpA_-aSOmJh2EDhgZrm_xWpST-SNFveXAcoKSQTX1WrxKnw9H2B6K2CSGljoXQgfHlj1JOZn12TBe4JPUEk_dL6wt93oaPdn817NzFxLlVkBP1-tsQcUt3OSBl295OMqoizOI"
-    ),
-    Province(
-        name = "Sumatera Utara",
-        polda = "Polda Sumatera Utara",
-        imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuBogaAUDOGZE28mlm-FHpnuPvr-cNyaZTzNCvrvGLJQr5WWa1wss-HFedCOAvovvhPOI-3tqgHNAr3ydabuZ6v1SK2Dgw4SnRjKZRr_q3M045U-s0TuLHIZRbPGhgHXxwUCCp750nsY0trj4cDVJpUisHRPlNxKANPEXq9eqd2DWkAdMJa8IFHOMvIZJXGpkP40rcGmZyFtt9G1CuCMom_Wqj4_t-1ePcE6fNq-BQpVJbYRHYEtVi5QXVqEFceYkBxb1tD1d7EaTBxG"
-    ),
-    Province(
-        name = "Sumatera Barat",
-        polda = "Polda Sumatera Barat",
-        imageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Jam_Gadang_2014-08-03.jpg/320px-Jam_Gadang_2014-08-03.jpg"
-    ),
-    Province(
-        name = "Sulawesi Selatan",
-        polda = "Polda Sulawesi Selatan",
-        imageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Fort_Rotterdam_Makassar.jpg/320px-Fort_Rotterdam_Makassar.jpg"
-    ),
-    Province(
-        name = "Kalimantan Barat",
-        polda = "Polda Kalimantan Barat",
-        imageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Equator_Monument_Pontianak.jpg/320px-Equator_Monument_Pontianak.jpg"
-    ),
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,7 +45,7 @@ fun SelectProvinceScreen(
         if (searchQuery.isBlank()) allProvinces
         else allProvinces.filter {
             it.name.contains(searchQuery, ignoreCase = true) ||
-                    it.polda.contains(searchQuery, ignoreCase = true)
+                    it.name.contains(searchQuery, ignoreCase = true)
         }
     }
 
@@ -293,25 +234,6 @@ private fun SelectProvinceItem(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Province thumbnail
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f))
-                    .border(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(10.dp)
-                    )
-            ) {
-                AsyncImage(
-                    model = province.imageUrl,
-                    contentDescription = province.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
 
             Spacer(modifier = Modifier.width(16.dp))
 
@@ -327,7 +249,7 @@ private fun SelectProvinceItem(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = province.polda,
+                    text = province.name,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     fontSize = 12.sp,
                     maxLines = 1,
