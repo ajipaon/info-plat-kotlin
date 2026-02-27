@@ -43,23 +43,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.paondev.infoplat.data.Province
-import com.paondev.infoplat.data.api.RetrofitClient
-import com.paondev.infoplat.data.repository.ProvinceRepository
 import com.paondev.infoplat.ui.viewmodel.ProvinceViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProvinceSelectorCard(
-
+    viewModel: ProvinceViewModel = hiltViewModel()
 ) {
     var showModal by remember { mutableStateOf(false) }
-    
-    // Get ViewModel instance
-    val viewModel: ProvinceViewModel = viewModel(
-        factory = ProvinceViewModelFactory(ProvinceRepository(RetrofitClient.apiService))
-    )
     
     val provinces by viewModel.provinces.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -308,18 +301,5 @@ fun ProvincePickerSheet(
                 }
             }
         }
-    }
-}
-
-// Factory untuk ViewModel
-class ProvinceViewModelFactory(
-    private val repository: ProvinceRepository
-) : androidx.lifecycle.ViewModelProvider.Factory {
-    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ProvinceViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return ProvinceViewModel(repository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

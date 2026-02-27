@@ -5,16 +5,19 @@ import androidx.lifecycle.viewModelScope
 import com.paondev.infoplat.data.Province
 import com.paondev.infoplat.data.allProvinces
 import com.paondev.infoplat.data.repository.ProvinceRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ProvinceViewModel(
+@HiltViewModel
+class ProvinceViewModel @Inject constructor(
     private val repository: ProvinceRepository
 ) : ViewModel() {
 
-    private val _provinces = MutableStateFlow<List<Province>>(allProvinces)
+    private val _provinces = MutableStateFlow<List<Province>>(emptyList())
     val provinces: StateFlow<List<Province>> = _provinces.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
