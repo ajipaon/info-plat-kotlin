@@ -82,40 +82,40 @@ fun VehicleDetailScreen(
             TaxStatusCard(data)
         }
 
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = { },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(56.dp)
-                    .shadow(
-                        4.dp,
-                        RoundedCornerShape(12.dp),
-                        spotColor = MaterialTheme.colorScheme.tertiary
-                    ),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                Icon(
-                    Icons.Outlined.History,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "View Tax History",
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-        }
+//        item {
+//            Spacer(modifier = Modifier.height(24.dp))
+//            Button(
+//                onClick = { },
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(horizontal = 16.dp)
+//                    .height(56.dp)
+//                    .shadow(
+//                        4.dp,
+//                        RoundedCornerShape(12.dp),
+//                        spotColor = MaterialTheme.colorScheme.tertiary
+//                    ),
+//                shape = RoundedCornerShape(12.dp),
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = MaterialTheme.colorScheme.tertiary,
+//                    contentColor = MaterialTheme.colorScheme.onPrimary
+//                )
+//            ) {
+//                Icon(
+//                    Icons.Outlined.History,
+//                    contentDescription = null,
+//                    tint = MaterialTheme.colorScheme.onPrimary
+//                )
+//                Spacer(modifier = Modifier.width(8.dp))
+//                Text(
+//                    "View Tax History",
+//                    fontWeight = FontWeight.Bold,
+//                    color = MaterialTheme.colorScheme.onPrimary
+//                )
+//            }
+//
+//            Spacer(modifier = Modifier.height(32.dp))
+//        }
     }
 }
 
