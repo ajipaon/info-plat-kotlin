@@ -11,8 +11,14 @@ interface Destination {
 }
 
 
-object CatalogDestination: Destination {
-    override val route = "catalog"
-    override val title = "catalog"
+object PlateCheckDestination: Destination {
+    override val route = "PlateCheckScreen"
+    override val title = "Plate Check"
+    override val icon = Icons.Filled.Home
+}
+
+object SearchHistoryDestination: Destination {
+    override val route = "SearchHistory"
+    override val title = "Search History"
     override val icon = Icons.Filled.Home
 }

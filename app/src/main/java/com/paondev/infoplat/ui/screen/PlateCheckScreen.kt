@@ -30,13 +30,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.paondev.infoplat.navigation.SearchHistoryDestination
 import com.paondev.infoplat.ui.components.ProvinceSelectorCard
 import com.paondev.infoplat.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlateCheckScreen() {
+fun PlateCheckScreen(
+    navController: NavController,
+//    viewModel: SignInViewModel = hiltViewModel()
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -107,7 +112,11 @@ fun PlateCheckScreen() {
             }
 
             item {
-                RecentSearchesHeader()
+                RecentSearchesHeader(
+                    toHistory = {
+                        navController.navigate(SearchHistoryDestination.route)
+                    }
+                )
             }
 
             items(recentSearchesRevised) { search ->
@@ -312,7 +321,9 @@ fun PlateTextField(placeholder: String, length: Int, modifier: Modifier, default
 }
 
 @Composable
-fun RecentSearchesHeader() {
+fun RecentSearchesHeader(
+    toHistory: () -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -333,7 +344,7 @@ fun RecentSearchesHeader() {
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.tertiary
             ),
-            modifier = Modifier.clickable { /* TODO */ }
+            modifier = Modifier.clickable { toHistory() }
         )
     }
 }
@@ -514,10 +525,10 @@ val recentSearchesRevised = listOf(
     )
 )
 
-@Preview(showBackground = false)
-@Composable
-fun PlateCheckScreenPreview() {
-    InfoPlatTheme {
-        PlateCheckScreen()
-    }
-}
+//@Preview(showBackground = false)
+//@Composable
+//fun PlateCheckScreenPreview() {
+//    InfoPlatTheme {
+//        PlateCheckScreen()
+//    }
+//}

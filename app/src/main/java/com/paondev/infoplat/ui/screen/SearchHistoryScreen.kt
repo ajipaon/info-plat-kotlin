@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.paondev.infoplat.ui.theme.*
 
 // Data model for history item
@@ -46,6 +47,7 @@ private val historyLog = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchHistoryScreen(
+    navController: NavController,
     onBackClick: () -> Unit = {},
     onClearAllClick: () -> Unit = {}
 ) {
@@ -330,10 +332,10 @@ private enum class HistoryNav(
     Profile("Profile", Icons.Default.Person)
 }
 
-@Preview(showBackground = true)
-@Composable
-fun SearchHistoryScreenPreview() {
-    InfoPlatTheme(darkTheme = false) {
-        SearchHistoryScreen()
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun SearchHistoryScreenPreview() {
+//    InfoPlatTheme(darkTheme = false) {
+//        SearchHistoryScreen()
+//    }
+//}

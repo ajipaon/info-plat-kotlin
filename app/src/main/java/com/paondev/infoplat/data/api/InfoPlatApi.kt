@@ -10,7 +10,7 @@ import retrofit2.http.Url
 interface InfoPlatApi {
 
     @GET("api/provinces/all")
-    suspend fun getProvinces(): List<?>
+    suspend fun getProvinces(): ProvinceApiResponse
 //
 //    @GET("countries.json")
 //    suspend fun getCountries(): List<Country>
