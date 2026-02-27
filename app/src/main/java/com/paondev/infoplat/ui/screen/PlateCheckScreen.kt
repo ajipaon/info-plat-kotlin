@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.paondev.infoplat.ui.components.ProvinceSelectorCard
 import com.paondev.infoplat.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -115,74 +116,6 @@ fun PlateCheckScreen() {
 
             item {
                 Spacer(modifier = Modifier.height(100.dp))
-            }
-        }
-    }
-}
-
-@Composable
-fun ProvinceSelectorCard() {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp)
-            ) {
-                Text(
-                    text = "SEARCHING IN",
-                    style = TextStyle(
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        letterSpacing = 0.5.sp
-                    )
-                )
-                Text(
-                    text = "DKI Jakarta",
-                    style = TextStyle(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                )
-            }
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.clickable { /* TODO */ }
-            ) {
-                Text(
-                    text = "Change",
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    style = TextStyle(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                )
             }
         }
     }
@@ -316,7 +249,7 @@ fun LicensePlateInput() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            PlateTextField(placeholder = "B", length = 2, modifier = Modifier.width(50.dp), defaultValue = "B")
+            PlateTextField(placeholder = "B", length = 2, modifier = Modifier.width(50.dp))
             Text(
                 "•",
                 color = MaterialTheme.colorScheme.tertiary,
