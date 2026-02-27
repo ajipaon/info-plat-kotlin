@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,21 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
     kotlin("kapt")
+}
+
+/* ===========================
+   Load local.properties
+   =========================== */
+val properties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { properties.load(it) }
+} else {
+    println("WARNING: local.properties not found!")
+}
+
+fun getProps(propName: String): String {
+    return properties.getProperty(propName) ?: System.getenv(propName) ?: ""
 }
 
 android {
@@ -21,10 +38,10 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Read from local.properties
-        val jabarPajakApiUrl = project.findProperty("JABAR_PAJAK_API_URL")?.toString() ?: ""
-        val jabarPajakApiKey = project.findProperty("JABAR_PAJAK_API_KEY")?.toString() ?: ""
-        val jabarPajakXSignature = project.findProperty("JABAR_PAJAK_X_SIGNATURE")?.toString() ?: ""
-        val jabarPajakXLocalization = project.findProperty("JABAR_PAJAK_X_LOCALIZATION")?.toString() ?: ""
+        val jabarPajakApiUrl = getProps("JABAR_PAJAK_API_URL")
+        val jabarPajakApiKey = getProps("JABAR_PAJAK_API_KEY")
+        val jabarPajakXSignature = getProps("JABAR_PAJAK_X_SIGNATURE")
+        val jabarPajakXLocalization = getProps("JABAR_PAJAK_X_LOCALIZATION")
 
         buildConfigField("String", "JABAR_PAJAK_API_URL", "\"$jabarPajakApiUrl\"")
         buildConfigField("String", "JABAR_PAJAK_API_KEY", "\"$jabarPajakApiKey\"")
