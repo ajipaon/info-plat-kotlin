@@ -515,41 +515,6 @@ fun TaxBreakdownItem(
     }
 }
 
-@Composable
-fun NavItemDetail(
-    icon: ImageVector,
-    label: String,
-    isSelected: Boolean
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable { }
-            .padding(8.dp)
-    ) {
-
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = if (isSelected)
-                MaterialTheme.colorScheme.tertiary
-            else
-                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-            modifier = Modifier.size(24.dp)
-        )
-
-        Text(
-            text = label,
-            fontSize = 10.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected)
-                MaterialTheme.colorScheme.tertiary
-            else
-                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-        )
-    }
-}
 
 //@Preview(showBackground = true)
 //@Composable
