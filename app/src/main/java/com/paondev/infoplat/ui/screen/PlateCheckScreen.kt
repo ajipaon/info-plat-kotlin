@@ -16,6 +16,12 @@ import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.paondev.infoplat.data.api.JabarPajakResponse
+import com.paondev.infoplat.data.repository.ProvinceRepository
+import com.paondev.infoplat.ui.viewmodel.ProvinceViewModel
+import com.paondev.infoplat.navigation.VehicleDetailDestination
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -40,8 +46,16 @@ import com.paondev.infoplat.ui.theme.*
 @Composable
 fun PlateCheckScreen(
     navController: NavController,
-    padding: PaddingValues = PaddingValues(0.dp)
+    padding: PaddingValues = PaddingValues(0.dp),
+    viewModel: ProvinceViewModel = hiltViewModel()
 ) {
+    val selectedProvince by viewModel.selectedProvince.collectAsState()
+    var headPlat by remember { mutableStateOf("") }
+    var bodyPlat by remember { mutableStateOf("") }
+    var tailPlat by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -55,7 +69,34 @@ fun PlateCheckScreen(
         }
 
         item {
-            PlateCheckHeroSection()
+            PlateCheckHeroSection(
+                headPlat = headPlat,
+                onHeadPlatChange = { headPlat = it },
+                bodyPlat = bodyPlat,
+                onBodyPlatChange = { bodyPlat = it },
+                tailPlat = tailPlat,
+                onTailPlatChange = { tailPlat = it },
+                isLoading = isLoading,
+                onCheckClick = {
+                    if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty()) {
+                        isLoading = true
+                        coroutineScope.launch {
+                            val result = viewModel.getVehicleInfo(
+                                provinceCode = selectedProvince?.kode ?: "",
+                                headPlat = headPlat,
+                                bodyPlat = bodyPlat,
+                                tailPlat = tailPlat
+                            )
+                            isLoading = false
+                            result.onSuccess { response ->
+                                navController.navigate(VehicleDetailDestination.createRoute(response))
+                            }.onFailure {
+                                // Handle error - show toast or snackbar
+                            }
+                        }
+                    }
+                }
+            )
         }
 
         item {
@@ -77,7 +118,16 @@ fun PlateCheckScreen(
 }
 
 @Composable
-fun PlateCheckHeroSection() {
+fun PlateCheckHeroSection(
+    headPlat: String,
+    onHeadPlatChange: (String) -> Unit,
+    bodyPlat: String,
+    onBodyPlatChange: (String) -> Unit,
+    tailPlat: String,
+    onTailPlatChange: (String) -> Unit,
+    isLoading: Boolean,
+    onCheckClick: () -> Unit
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = "Cek pajak kendaraan",
@@ -106,12 +156,20 @@ fun PlateCheckHeroSection() {
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                LicensePlateInput()
+                LicensePlateInput(
+                    headPlat = headPlat,
+                    onHeadPlatChange = onHeadPlatChange,
+                    bodyPlat = bodyPlat,
+                    onBodyPlatChange = onBodyPlatChange,
+                    tailPlat = tailPlat,
+                    onTailPlatChange = onTailPlatChange
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = { /* TODO */ },
+                    onClick = onCheckClick,
+                    enabled = !isLoading && headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
@@ -191,7 +249,14 @@ fun PlateCheckHeroSection() {
 }
 
 @Composable
-fun LicensePlateInput() {
+fun LicensePlateInput(
+    headPlat: String,
+    onHeadPlatChange: (String) -> Unit,
+    bodyPlat: String,
+    onBodyPlatChange: (String) -> Unit,
+    tailPlat: String,
+    onTailPlatChange: (String) -> Unit
+) {
     Box {
         Row(
             modifier = Modifier
@@ -204,21 +269,21 @@ fun LicensePlateInput() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            PlateTextField(placeholder = "B", length = 2, modifier = Modifier.width(50.dp))
+            PlateTextField(placeholder = "B", length = 2, modifier = Modifier.width(50.dp), defaultValue = headPlat, onValueChange = onHeadPlatChange)
             Text(
                 "•",
                 color = MaterialTheme.colorScheme.tertiary,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
-            PlateTextField(placeholder = "1234", length = 4, modifier = Modifier.width(90.dp))
+            PlateTextField(placeholder = "1234", length = 4, modifier = Modifier.width(90.dp), defaultValue = bodyPlat, onValueChange = onBodyPlatChange)
             Text(
                 "•",
                 color = MaterialTheme.colorScheme.tertiary,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
-            PlateTextField(placeholder = "XYZ", length = 3, modifier = Modifier.width(60.dp))
+            PlateTextField(placeholder = "XYZ", length = 3, modifier = Modifier.width(60.dp), defaultValue = tailPlat, onValueChange = onTailPlatChange)
         }
     }
 }
@@ -234,11 +299,16 @@ fun Bolt(modifier: Modifier) {
 }
 
 @Composable
-fun PlateTextField(placeholder: String, length: Int, modifier: Modifier, defaultValue: String = "") {
+fun PlateTextField(placeholder: String, length: Int, modifier: Modifier, defaultValue: String = "", onValueChange: (String) -> Unit = {}) {
     var text by remember { mutableStateOf(defaultValue) }
     BasicTextField(
         value = text,
-        onValueChange = { if (it.length <= length) text = it.uppercase() },
+        onValueChange = { 
+            if (it.length <= length) {
+                text = it.uppercase()
+                onValueChange(it.uppercase())
+            }
+        },
         modifier = modifier,
         textStyle = TextStyle(
             color = MaterialTheme.colorScheme.tertiary,

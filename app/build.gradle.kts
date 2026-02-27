@@ -19,6 +19,17 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Read from local.properties
+        val jabarPajakApiUrl = project.findProperty("JABAR_PAJAK_API_URL")?.toString() ?: ""
+        val jabarPajakApiKey = project.findProperty("JABAR_PAJAK_API_KEY")?.toString() ?: ""
+        val jabarPajakXSignature = project.findProperty("JABAR_PAJAK_X_SIGNATURE")?.toString() ?: ""
+        val jabarPajakXLocalization = project.findProperty("JABAR_PAJAK_X_LOCALIZATION")?.toString() ?: ""
+
+        buildConfigField("String", "JABAR_PAJAK_API_URL", "\"$jabarPajakApiUrl\"")
+        buildConfigField("String", "JABAR_PAJAK_API_KEY", "\"$jabarPajakApiKey\"")
+        buildConfigField("String", "JABAR_PAJAK_X_SIGNATURE", "\"$jabarPajakXSignature\"")
+        buildConfigField("String", "JABAR_PAJAK_X_LOCALIZATION", "\"$jabarPajakXLocalization\"")
     }
 
     buildTypes {
@@ -39,6 +50,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

@@ -30,6 +30,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,8 +58,14 @@ fun ProvinceSelectorCard(
     val provinces by viewModel.provinces.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val selectedProvince by viewModel.selectedProvince.collectAsState()
     
-    var selectedProvince by remember { mutableStateOf(provinces.firstOrNull() ?: com.paondev.infoplat.data.allProvinces.first()) }
+    // Initialize selected province if not set
+    LaunchedEffect(provinces) {
+        if (selectedProvince == null && provinces.isNotEmpty()) {
+            viewModel.selectProvince(provinces.first())
+        }
+    }
 
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -99,7 +106,7 @@ fun ProvinceSelectorCard(
                     )
                 )
                 Text(
-                    text = selectedProvince.name,
+                    text = selectedProvince?.name ?: "Select Province",
                     style = TextStyle(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
@@ -135,9 +142,9 @@ fun ProvinceSelectorCard(
                 provinces = provinces,
                 isLoading = isLoading,
                 error = error,
-                selectedProvince = selectedProvince,
+                selectedProvince = selectedProvince ?: com.paondev.infoplat.data.allProvinces.first(),
                 onSelect = {
-                    selectedProvince = it
+                    viewModel.selectProvince(it)
                     showModal = false
                 },
                 onRetry = { viewModel.fetchProvinces() }

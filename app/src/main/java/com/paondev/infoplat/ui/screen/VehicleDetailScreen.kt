@@ -33,26 +33,53 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material3.HorizontalDivider
 import androidx.navigation.NavController
+import com.paondev.infoplat.data.api.JabarPajakResponse
+import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.Currency
+
+// Helper function to format currency
+fun formatCurrency(amount: String): String {
+    val number = amount.toLongOrNull() ?: 0L
+    val format = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+    return format.format(number)
+}
+
+// Helper function to format date
+fun formatDate(dateString: String): String {
+    return try {
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val outputFormat = SimpleDateFormat("dd MMMM yyyy", Locale("id"))
+        val date = inputFormat.parse(dateString)
+        date?.let { outputFormat.format(it) } ?: dateString
+    } catch (e: Exception) {
+        dateString
+    }
+}
 
 @Composable
 fun VehicleDetailScreen(
-    navController: NavController
+    navController: NavController,
+    jabarPajakData: JabarPajakResponse? = null
 ) {
+    val data = jabarPajakData?.data
+    
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
         item {
-            LicensePlateHeroDetail()
+            LicensePlateHeroDetail(data?.noPolisi, data?.infoPkbPnpb?.wilayah)
         }
 
         item {
             Spacer(modifier = Modifier.height(16.dp))
-            VehicleSpecificationCard()
+            VehicleSpecificationCard(data)
         }
 
         item {
             Spacer(modifier = Modifier.height(16.dp))
-            TaxStatusCard()
+            TaxStatusCard(data)
         }
 
         item {
@@ -93,7 +120,9 @@ fun VehicleDetailScreen(
 }
 
 @Composable
-fun LicensePlateHeroDetail() {
+fun LicensePlateHeroDetail(noPolisi: String?, wilayah: String?) {
+    val plateNumber = noPolisi ?: "B 1234 XYZ"
+    val regionName = wilayah ?: "JAKARTA TIMUR"
 
     Box(
         modifier = Modifier
@@ -129,7 +158,7 @@ fun LicensePlateHeroDetail() {
             }
 
             Text(
-                "B 1234 XYZ",
+                plateNumber,
                 style = TextStyle(
                     color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 32.sp,
@@ -146,7 +175,7 @@ fun LicensePlateHeroDetail() {
             )
 
             Text(
-                "JAKARTA TIMUR",
+                regionName.uppercase(),
                 style = TextStyle(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     fontSize = 12.sp,
@@ -159,7 +188,18 @@ fun LicensePlateHeroDetail() {
 }
 
 @Composable
-fun VehicleSpecificationCard() {
+fun VehicleSpecificationCard(data: com.paondev.infoplat.data.api.JabarPajakData?) {
+    val brandModel = if (data != null) "${data.namaMerk} ${data.namaModel}" else "Toyota Avanza"
+    val year = data?.tahunBuatan ?: "2020"
+    val color = data?.warna ?: "Silver Metallic"
+    val vehicleType = data?.jenis ?: "Roda 4"
+    val ownership = when(data?.milikKe) {
+        "1" -> "First (Pribadi)"
+        "2" -> "Second (Pribadi)"
+        "3" -> "Third (Pribadi)"
+        else -> "Unknown"
+    }
+    
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -246,12 +286,12 @@ fun VehicleSpecificationCard() {
                 Row(Modifier.fillMaxWidth()) {
                     SpecItem(
                         "Brand / Model",
-                        "Toyota Avanza",
+                        brandModel,
                         Modifier.weight(1f)
                     )
                     SpecItem(
                         "Manufacturing Year",
-                        "2020",
+                        year,
                         Modifier.weight(1f)
                     )
                 }
@@ -259,13 +299,13 @@ fun VehicleSpecificationCard() {
                 Row(Modifier.fillMaxWidth()) {
                     SpecColorItem(
                         "Color",
-                        "Silver Metallic",
+                        color.uppercase(),
                         Color(0xFFC0C0C0),
                         Modifier.weight(1f)
                     )
                     SpecItem(
-                        "Engine Capacity",
-                        "1329 cc",
+                        "Vehicle Type",
+                        vehicleType,
                         Modifier.weight(1f)
                     )
                 }
@@ -278,7 +318,7 @@ fun VehicleSpecificationCard() {
                     )
                     SpecItem(
                         "Ownership",
-                        "First (Pribadi)",
+                        ownership,
                         Modifier.weight(1f)
                     )
                 }
@@ -349,7 +389,13 @@ fun SpecColorItem(
 }
 
 @Composable
-fun TaxStatusCard() {
+fun TaxStatusCard(data: com.paondev.infoplat.data.api.JabarPajakData?) {
+    val stnkExpiry = data?.infoPkbPnpb?.tanggalStnk?.let { formatDate(it) } ?: "15 June 2025"
+    val taxYear = data?.masaPajak?.tanggalBerlakuSampai?.substring(0, 4) ?: "2024"
+    val statusText = data?.keterangan ?: "UNKNOWN"
+    val isPaid = data?.canBePaid == false
+    val statusColor = if (isPaid) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
+    
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -372,13 +418,13 @@ fun TaxStatusCard() {
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f), CircleShape),
+                            .background(statusColor.copy(alpha = 0.1f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.ReceiptLong,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary,
+                            tint = statusColor,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -395,11 +441,11 @@ fun TaxStatusCard() {
 
                 Surface(
                     shape = RoundedCornerShape(999.dp),
-                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)
+                    color = statusColor.copy(alpha = 0.1f)
                 ) {
                     Text(
-                        "PAID",
-                        color = MaterialTheme.colorScheme.tertiary,
+                        statusText,
+                        color = statusColor,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
@@ -425,7 +471,7 @@ fun TaxStatusCard() {
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                     Text(
-                        "15 June 2025",
+                        stnkExpiry,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -439,7 +485,7 @@ fun TaxStatusCard() {
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                     Text(
-                        "2024",
+                        taxYear,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -450,22 +496,35 @@ fun TaxStatusCard() {
             Spacer(modifier = Modifier.height(20.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-
+                val pembayaran = data?.infoPembayaran
+                
                 TaxBreakdownItem(
                     "PKB (Vehicle Tax)",
-                    "Rp 2.450.000",
+                    formatCurrency(pembayaran?.pkb?.pokok ?: "0"),
+                    false
+                )
+                TaxBreakdownItem(
+                    "Opsen (Admin)",
+                    formatCurrency(pembayaran?.opsen?.pokok ?: "0"),
                     false
                 )
                 TaxBreakdownItem(
                     "SWDKLLJ (Jasa Raharja)",
-                    "Rp 143.000",
+                    formatCurrency(pembayaran?.swdkllj?.pokok ?: "0"),
                     false
                 )
-                TaxBreakdownItem(
-                    "Administration Fee",
-                    "Rp 50.000",
-                    false
-                )
+
+                val pnpbStnk = pembayaran?.pnpb?.stnk?.toLongOrNull() ?: 0L
+                val pnpbTnkb = pembayaran?.pnpb?.tnkb?.toLongOrNull() ?: 0L
+                val totalPnpb = pnpbStnk + pnpbTnkb
+                
+                if (totalPnpb > 0) {
+                    TaxBreakdownItem(
+                        "PNPB (Admin)",
+                        formatCurrency(totalPnpb.toString()),
+                        false
+                    )
+                }
 
                 Divider(
                     color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f),
@@ -473,8 +532,8 @@ fun TaxStatusCard() {
                 )
 
                 TaxBreakdownItem(
-                    "Total Tax Paid",
-                    "Rp 2.643.000",
+                    "Total Tax",
+                    formatCurrency(pembayaran?.jumlah ?: "0"),
                     true
                 )
             }
