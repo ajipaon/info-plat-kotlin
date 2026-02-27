@@ -2,6 +2,7 @@ package com.paondev.infoplat.ui.screen
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -36,96 +37,41 @@ import com.paondev.infoplat.navigation.SearchHistoryDestination
 import com.paondev.infoplat.ui.components.ProvinceSelectorCard
 import com.paondev.infoplat.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlateCheckScreen(
     navController: NavController,
-//    viewModel: SignInViewModel = hiltViewModel()
+    padding: PaddingValues = PaddingValues(0.dp)
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                            modifier = Modifier.padding(end = 12.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.DirectionsCar,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.tertiary,
-                                modifier = Modifier.padding(8.dp)
-                            )
-                        }
-                        Text(
-                            text = "Plate Check",
-                            style = TextStyle(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        )
-                    }
-                },
-                actions = {
-                    Box(modifier = Modifier.padding(end = 8.dp)) {
-//                        IconButton(onClick = { /* TODO */ }) {
-//                            Icon(
-//                                imageVector = Icons.Outlined.Notifications,
-//                                contentDescription = "Notifications",
-//                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-//                            )
-//                        }
-//                        Box(
-//                            modifier = Modifier
-//                                .align(Alignment.TopEnd)
-//                                .padding(top = 10.dp, end = 10.dp)
-//                                .size(10.dp)
-//                                .background(Color.Red, CircleShape)
-//                                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
-//                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+            ProvinceSelectorCard()
+        }
+
+        item {
+            PlateCheckHeroSection()
+        }
+
+        item {
+            RecentSearchesHeader(
+                toHistory = {
+                    navController.navigate(SearchHistoryDestination.route)
+                }
             )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-                ProvinceSelectorCard()
-            }
+        }
 
-            item {
-                PlateCheckHeroSection()
-            }
+        items(recentSearchesRevised) { search ->
+            RecentSearchCard(search)
+        }
 
-            item {
-                RecentSearchesHeader(
-                    toHistory = {
-                        navController.navigate(SearchHistoryDestination.route)
-                    }
-                )
-            }
-
-            items(recentSearchesRevised) { search ->
-                RecentSearchCard(search)
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(100.dp))
-            }
+        item {
+            Spacer(modifier = Modifier.height(100.dp))
         }
     }
 }

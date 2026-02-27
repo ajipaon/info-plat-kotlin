@@ -22,3 +22,9 @@ object SearchHistoryDestination: Destination {
     override val title = "Search History"
     override val icon = Icons.Filled.Home
 }
+
+object VehicleDetailDestination: Destination {
+    override val route = "VehicleDetail"
+    override val title = "Vehicle Detail"
+    override val icon = Icons.Filled.Home
+}

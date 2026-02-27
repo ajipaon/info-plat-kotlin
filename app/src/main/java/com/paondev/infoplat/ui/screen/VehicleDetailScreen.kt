@@ -32,97 +32,62 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material3.HorizontalDivider
+import androidx.navigation.NavController
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VehicleDetailScreen() {
+fun VehicleDetailScreen(
+    navController: NavController
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        item {
+            LicensePlateHeroDetail()
+        }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Detail",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = 48.dp),
-                        style = TextStyle(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center
-                        )
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            VehicleSpecificationCard()
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            TaxStatusCard()
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = { },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(56.dp)
+                    .shadow(
+                        4.dp,
+                        RoundedCornerShape(12.dp),
+                        spotColor = MaterialTheme.colorScheme.tertiary
+                    ),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            item {
-                LicensePlateHeroDetail()
+            ) {
+                Icon(
+                    Icons.Outlined.History,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    "View Tax History",
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
             }
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                VehicleSpecificationCard()
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                TaxStatusCard()
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
-                    onClick = { },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .height(56.dp)
-                        .shadow(
-                            4.dp,
-                            RoundedCornerShape(12.dp),
-                            spotColor = MaterialTheme.colorScheme.tertiary
-                        ),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Icon(
-                        Icons.Outlined.History,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "View Tax History",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-            }
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -586,10 +551,10 @@ fun NavItemDetail(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun VehicleDetailScreenPreview() {
-    InfoPlatTheme {
-        VehicleDetailScreen()
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun VehicleDetailScreenPreview() {
+//    InfoPlatTheme {
+//        VehicleDetailScreen()
+//    }
+//}

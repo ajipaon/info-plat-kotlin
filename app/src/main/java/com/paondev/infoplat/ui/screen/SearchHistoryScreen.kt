@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.paondev.infoplat.navigation.VehicleDetailDestination
 import com.paondev.infoplat.ui.theme.*
 
 // Data model for history item
@@ -44,7 +45,6 @@ private val historyLog = listOf(
     HistoryItem("F 7781 GH", "Daihatsu Xenia", "28 Sep 2023")
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchHistoryScreen(
     navController: NavController,
@@ -60,130 +60,98 @@ fun SearchHistoryScreen(
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
-        Column(
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // Header Title
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Header
-            HistoryHeader(
-                onBackClick = onBackClick,
-                onClearAllClick = onClearAllClick
+            Text(
+                text = "Recent Searches",
+                style = TextStyle(
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                modifier = Modifier.weight(1f)
             )
-
-            // Search Bar
-            HistorySearchBar(
-                query = searchQuery,
-                onQueryChange = { searchQuery = it }
+            Text(
+                text = "Clear All",
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.tertiary
+                ),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onClearAllClick() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
             )
+        }
 
-            // History Log Section
-            LazyColumn(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // Section Title Label
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
-                    ) {
-                        Text(
-                            text = "HISTORY LOG",
-                            style = TextStyle(
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                letterSpacing = 1.2.sp
-                            )
+        // Search Bar
+        HistorySearchBar(
+            query = searchQuery,
+            onQueryChange = { searchQuery = it }
+        )
+
+        // History Log Section
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Section Title Label
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    Text(
+                        text = "HISTORY LOG",
+                        style = TextStyle(
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            letterSpacing = 1.2.sp
                         )
-                    }
-                }
-
-                // List Items
-                items(filteredHistory) { item ->
-                    HistoryListItem(item)
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
                     )
-                }
-
-                // Footer Text
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Showing last 30 days of history",
-                            style = TextStyle(
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-                            )
-                        )
-                    }
                 }
             }
-        }
-    }
-}
 
-@Composable
-private fun HistoryHeader(
-    onBackClick: () -> Unit,
-    onClearAllClick: () -> Unit
-) {
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = onBackClick,
-                    modifier = Modifier.size(40.dp)
+            // List Items
+            items(filteredHistory) { item ->
+                HistoryListItem(
+                    item,
+                    navigateToDetail = { i -> navController.navigate(VehicleDetailDestination.route)}
+                )
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+                )
+            }
+
+            // Footer Text
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onSurface
+                    Text(
+                        text = "Showing last 30 days of history",
+                        style = TextStyle(
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                        )
                     )
                 }
-
-                Text(
-                    text = "Recent Searches",
-                    style = TextStyle(
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    modifier = Modifier.weight(1f)
-                )
-
-                Text(
-                    text = "Clear All",
-                    style = TextStyle(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.tertiary
-                    ),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { onClearAllClick() }
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                )
             }
         }
     }
@@ -242,11 +210,14 @@ private fun HistorySearchBar(
 }
 
 @Composable
-private fun HistoryListItem(item: HistoryItem) {
+private fun HistoryListItem(
+    item: HistoryItem,
+    navigateToDetail: (String) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* TODO */ }
+            .clickable { navigateToDetail(item.model) }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
