@@ -14,9 +14,11 @@ navigationCompose = "2.9.7"
 room = "2.6.1"
 ksp = "2.0.21-1.0.27"
 retrofit = "2.11.0"
+okhttp = "4.12.0"
 pagingCompose = "3.3.6"
 hilt = "2.48"
 javapoet = "1.12.1"
+chucker = "4.0.0"
 
 
 [libraries]
@@ -45,10 +47,13 @@ coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coi
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version = "1.2.0" }
 javapoet = { group = "com.squareup", name = "javapoet", version.ref = "javapoet" }
+chucker-library = { group = "com.github.chuckerteam.chucker", name = "library", version.ref = "chucker" }
+chucker-library-no-op = { group = "com.github.chuckerteam.chucker", name = "library-no-op", version.ref = "chucker" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
