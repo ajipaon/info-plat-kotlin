@@ -31,4 +31,9 @@ interface InfoPlatDao {
         limit: Int
     ): List<History>
 
+    @Query("DELETE FROM history WHERE id = :id")
+    suspend fun deleteHistoryById(id: Long)
+
+    @Query("DELETE FROM history")
+    suspend fun deleteAllHistory()
 }

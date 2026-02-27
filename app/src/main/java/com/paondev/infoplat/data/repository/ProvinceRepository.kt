@@ -1,5 +1,6 @@
 package com.paondev.infoplat.data.repository
 
+import com.google.gson.Gson
 import com.paondev.infoplat.BuildConfig
 import com.paondev.infoplat.data.Province
 import com.paondev.infoplat.data.api.InfoPlatApi
@@ -7,11 +8,15 @@ import com.paondev.infoplat.data.api.JabarPajakRequest
 import com.paondev.infoplat.data.api.JabarPajakResponse
 import com.paondev.infoplat.data.api.toProvince
 import com.paondev.infoplat.data.allProvinces
+import com.paondev.infoplat.data.locale.InfoPlatDao
+import com.paondev.infoplat.model.History
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Date
 
 class ProvinceRepository(
-    private val api: InfoPlatApi
+    private val api: InfoPlatApi,
+    private val dao: InfoPlatDao
 ) {
     suspend fun getProvinces(): Result<List<Province>> {
         return withContext(Dispatchers.IO) {
@@ -50,7 +55,20 @@ class ProvinceRepository(
                         request = request
                     )
                     if (response.isSuccessful && response.body() != null) {
-                        Result.success(response.body()!!)
+                        val responseBody = response.body()!!
+                        
+                        // Save to history
+                        val gson = Gson()
+                        val jsonData = gson.toJson(responseBody)
+                        val history = History(
+                            code = noPolisi,
+                            requestDate = Date(),
+                            region = "JBR",
+                            data = jsonData
+                        )
+                        dao.insertHistory(history)
+                        
+                        Result.success(responseBody)
                     } else {
                         Result.failure(Exception("Failed to get vehicle info: ${response.code()}"))
                     }

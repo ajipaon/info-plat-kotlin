@@ -1,6 +1,7 @@
 package com.paondev.infoplat.ui.screen
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,48 +16,38 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.google.gson.Gson
+import com.paondev.infoplat.data.api.JabarPajakResponse
 import com.paondev.infoplat.navigation.VehicleDetailDestination
 import com.paondev.infoplat.ui.theme.*
-
-// Data model for history item
-data class HistoryItem(
-    val plate: String,
-    val model: String,
-    val date: String,
-    val isMotorcycle: Boolean = false
-)
-
-private val historyLog = listOf(
-    HistoryItem("B 1234 ABC", "Honda Vario 150", "12 Oct 2023", true),
-    HistoryItem("D 5678 XYZ", "Toyota Avanza", "10 Oct 2023"),
-    HistoryItem("L 9901 QR", "Yamaha NMAX", "08 Oct 2023", true),
-    HistoryItem("AD 4432 BG", "Suzuki Ertiga", "05 Oct 2023"),
-    HistoryItem("B 2002 TYU", "Mitsubishi Pajero", "01 Oct 2023"),
-    HistoryItem("F 7781 GH", "Daihatsu Xenia", "28 Sep 2023")
-)
+import com.paondev.infoplat.ui.viewmodel.HistoryDisplayItem
+import com.paondev.infoplat.ui.viewmodel.SearchHistoryViewModel
 
 @Composable
 fun SearchHistoryScreen(
     navController: NavController,
-    onBackClick: () -> Unit = {},
-    onClearAllClick: () -> Unit = {}
+    viewModel: SearchHistoryViewModel = hiltViewModel(),
+    onBackClick: () -> Unit = {}
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    val filteredHistory = remember(searchQuery) {
-        if (searchQuery.isBlank()) historyLog
-        else historyLog.filter {
-            it.plate.contains(searchQuery, ignoreCase = true) ||
-                    it.model.contains(searchQuery, ignoreCase = true)
+    val historyItems by viewModel.historyItems.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+
+    val filteredHistory = remember(searchQuery, historyItems) {
+        if (searchQuery.isBlank()) {
+            historyItems
+        } else {
+            historyItems.filter { item ->
+                item.plate.contains(searchQuery, ignoreCase = true) ||
+                        item.model.contains(searchQuery, ignoreCase = true)
+            }
         }
     }
 
@@ -89,7 +80,7 @@ fun SearchHistoryScreen(
                 ),
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable { onClearAllClick() }
+                    .clickable { viewModel.clearAllHistory() }
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             )
         }
@@ -97,62 +88,109 @@ fun SearchHistoryScreen(
         // Search Bar
         HistorySearchBar(
             query = searchQuery,
-            onQueryChange = { searchQuery = it }
+            onQueryChange = { viewModel.onSearchQueryChanged(it) }
         )
 
         // History Log Section
-        LazyColumn(
-            modifier = Modifier.fillMaxSize()
+        if (filteredHistory.isEmpty()) {
+            EmptyState()
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Section Title Label
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        Text(
+                            text = "HISTORY LOG",
+                            style = TextStyle(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                letterSpacing = 1.2.sp
+                            )
+                        )
+                    }
+                }
+
+                // List Items
+                items(filteredHistory) { item ->
+                    HistoryListItem(
+                        item = item,
+                        navigateToDetail = { 
+                            val route = VehicleDetailDestination.createRoute(
+                                Gson().fromJson(item.responseData, JabarPajakResponse::class.java)
+                            )
+                            navController.navigate(route)
+                        },
+                        onDelete = { viewModel.deleteHistoryItem(item.id) }
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+                    )
+                }
+
+                // Footer Text
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "${filteredHistory.size} search(es) saved",
+                            style = TextStyle(
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyState() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            // Section Title Label
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
-                    Text(
-                        text = "HISTORY LOG",
-                        style = TextStyle(
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            letterSpacing = 1.2.sp
-                        )
-                    )
-                }
-            }
-
-            // List Items
-            items(filteredHistory) { item ->
-                HistoryListItem(
-                    item,
-                    navigateToDetail = { i -> navController.navigate(VehicleDetailDestination.route)}
+            Icon(
+                imageVector = Icons.Default.History,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                modifier = Modifier.size(64.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "No Search History",
+                style = TextStyle(
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Your vehicle searches will appear here",
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                 )
-            }
-
-            // Footer Text
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Showing last 30 days of history",
-                        style = TextStyle(
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-                        )
-                    )
-                }
-            }
+            )
         }
     }
 }
@@ -211,13 +249,14 @@ private fun HistorySearchBar(
 
 @Composable
 private fun HistoryListItem(
-    item: HistoryItem,
-    navigateToDetail: (String) -> Unit
+    item: HistoryDisplayItem,
+    navigateToDetail: () -> Unit,
+    onDelete: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { navigateToDetail(item.model) }
+            .clickable { navigateToDetail() }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -280,7 +319,7 @@ private fun HistoryListItem(
 
         // Delete Button
         IconButton(
-            onClick = { /* TODO */ },
+            onClick = onDelete,
             modifier = Modifier.size(40.dp)
         ) {
             Icon(
@@ -292,21 +331,3 @@ private fun HistoryListItem(
         }
     }
 }
-
-private enum class HistoryNav(
-    val label: String,
-    val icon: ImageVector,
-) {
-    Home("Home", Icons.Default.Home),
-    History("History", Icons.Default.History),
-    TaxInfo("Tax Info", Icons.Default.Description),
-    Profile("Profile", Icons.Default.Person)
-}
-
-//@Preview(showBackground = true)
-//@Composable
-//fun SearchHistoryScreenPreview() {
-//    InfoPlatTheme(darkTheme = false) {
-//        SearchHistoryScreen()
-//    }
-//}
