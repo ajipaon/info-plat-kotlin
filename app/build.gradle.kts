@@ -44,6 +44,7 @@ android {
         val jabarPajakXLocalization = getProps("JABAR_PAJAK_X_LOCALIZATION")
         val JatimCaptchaUrl = getProps("JATIM_CAPTCHA_URL")
         val JatimPajakApiUrl = getProps("JATIM_PAJAK_API_URL")
+        val DiypPajakApiUrl = getProps("DIYP_PAJAK_API_URL")
 
         buildConfigField("String", "JABAR_PAJAK_API_URL", "\"$jabarPajakApiUrl\"")
         buildConfigField("String", "JABAR_PAJAK_API_KEY", "\"$jabarPajakApiKey\"")
@@ -52,6 +53,7 @@ android {
 
         buildConfigField("String", "JATIM_CAPTCHA_URL", "\"$JatimCaptchaUrl\"")
         buildConfigField("String", "JATIM_PAJAK_API_URL", "\"$JatimPajakApiUrl\"")
+        buildConfigField("String", "DIYP_PAJAK_API_URL", "\"$DiypPajakApiUrl\"")
     }
 
     buildTypes {

@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.paondev.infoplat.data.api.DiypPajakData
+import com.paondev.infoplat.data.api.DiypPajakResponse
 import com.paondev.infoplat.data.api.JabarPajakData
 import com.paondev.infoplat.data.api.JabarPajakResponse
 import com.paondev.infoplat.data.api.InfoPkbPnpb
@@ -156,6 +158,30 @@ fun PlateCheckScreen(
                                     isLoading = false
                                     result.onSuccess { response ->
                                         navController.navigate(VehicleDetailDestination.createRoute(response))
+                                    }.onFailure {
+                                        errorMessage = it.message
+                                    }
+                                }
+                            } else {
+                                errorMessage = "Semua field harus diisi"
+                            }
+                        }
+                        "DIY" -> {
+                            // DIY: Direct check
+                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty()) {
+                                isLoading = true
+                                coroutineScope.launch {
+                                    val result = viewModel.getDiypVehicleInfo(
+                                        provinceCode = "DIY",
+                                        headPlat = headPlat,
+                                        bodyPlat = bodyPlat,
+                                        tailPlat = tailPlat
+                                    )
+                                    isLoading = false
+                                    result.onSuccess { response ->
+                                        // Convert DIY response to Jabar response format for navigation
+                                        val jabarResponse = convertDiypToJabar(response)
+                                        navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
                                     }.onFailure {
                                         errorMessage = it.message
                                     }
@@ -738,6 +764,90 @@ fun CaptchaSection(
                 }
             )
         }
+    }
+}
+
+// Helper function to convert DIY response to Jabar response format
+fun convertDiypToJabar(diypResponse: DiypPajakResponse): JabarPajakResponse {
+    val data = diypResponse.data
+    return if (data != null) {
+        val pkbValue = data.pkb.trim()
+        val swdklljValue = data.swdkllj.trim()
+        val totalValue = (data.pkb.toDoubleOrNull() ?: 0.0) + (data.swdkllj.toDoubleOrNull() ?: 0.0)
+        
+        JabarPajakResponse(
+            status = true,
+            message = "Data ditemukan",
+            code = "200",
+            data = JabarPajakData(
+                namaMerk = data.nmmerekkb.trim(),
+                jenis = "Kendaraan",
+                tahunBuatan = data.tahunkb.trim(),
+                milikKe = "1",
+                namaModel = data.nmmodelkb.trim(),
+                warna = "-",
+                noPolisi = data.nopolisi.trim(),
+                infoPkbPnpb = InfoPkbPnpb(
+                    tanggalPajak = data.tgakhirpkb.trim(),
+                    tanggalStnk = data.tgakhirpkb.trim(),
+                    wilayah = "DIY"
+                ),
+                infoPembayaran = InfoPembayaran(
+                    pkb = TaxDetail(pokok = pkbValue, denda = "0"),
+                    opsen = TaxDetail(pokok = "0", denda = "0"),
+                    swdkllj = TaxDetail(pokok = swdklljValue, denda = "0"),
+                    pnpb = PnpbDetail(stnk = "100000", tnkb = "60000"),
+                    jumlah = totalValue.toString()
+                ),
+                infoKendaraan = mapOf(
+                    "merk" to data.nmmerekkb.trim(),
+                    "model" to data.nmmodelkb.trim(),
+                    "tahun" to data.tahunkb.trim()
+                ),
+                waktuProses = "",
+                keterangan = "Data ditemukan",
+                isFiveYear = false,
+                isBlocked = false,
+                blockedDescription = "",
+                isCompany = false,
+                canBePaid = true,
+                infoTransaksi = InfoTransaksi(
+                    kendaraanMilik = "1",
+                    waktuTransaksi = "",
+                    waktuKadaluarsa = "",
+                    durasiKadaluarsa = 0,
+                    waktuTunggu = "",
+                    durasiTunggu = 0,
+                    waktuTungguPembayaran = "",
+                    durasiTungguPembayaran = 0,
+                    expiredVerificationTime = null,
+                    kodeBayar = "",
+                    nominalPembayaran = totalValue.toString(),
+                    status = "success",
+                    ableToPaymentChecking = true,
+                    institution = "SAMSAT DIY",
+                    institutionGateway = "SAMSAT DIY"
+                ),
+                isCutOff = false,
+                availablePaymentMethods = AvailablePaymentMethods(
+                    kodeBayar = false,
+                    qris = true,
+                    va = true,
+                    finpay = false
+                ),
+                masaPajak = MasaPajak(
+                    tanggalJatuhTempoSebelumnya = data.tgakhirpkb.trim(),
+                    tanggalBerlakuSampai = data.tgakhirpkb.trim()
+                )
+            )
+        )
+    } else {
+        JabarPajakResponse(
+            status = false,
+            message = "Data tidak ditemukan",
+            code = "404",
+            data = null
+        )
     }
 }
 

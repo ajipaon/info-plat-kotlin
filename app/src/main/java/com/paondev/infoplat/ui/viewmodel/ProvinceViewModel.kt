@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.paondev.infoplat.data.Province
 import com.paondev.infoplat.data.allProvinces
+import com.paondev.infoplat.data.api.DiypPajakResponse
 import com.paondev.infoplat.data.api.JabarPajakResponse
 import com.paondev.infoplat.data.api.JatimCaptchaResponse
 import com.paondev.infoplat.data.api.JatimPkbResponse
@@ -121,6 +122,20 @@ class ProvinceViewModel @Inject constructor(
         }
 
         return result
+    }
+
+    suspend fun getDiypVehicleInfo(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String
+    ): Result<DiypPajakResponse> {
+        return repository.getDiypVehicleInfo(
+            provinceCode = provinceCode,
+            headPlat = headPlat,
+            bodyPlat = bodyPlat,
+            tailPlat = tailPlat
+        )
     }
 
     fun clearCaptchaError() {

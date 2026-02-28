@@ -4,6 +4,7 @@ import androidx.compose.ui.text.toUpperCase
 import com.google.gson.Gson
 import com.paondev.infoplat.BuildConfig
 import com.paondev.infoplat.data.Province
+import com.paondev.infoplat.data.api.DiypPajakResponse
 import com.paondev.infoplat.data.api.InfoPlatApi
 import com.paondev.infoplat.data.api.JabarPajakRequest
 import com.paondev.infoplat.data.api.JabarPajakResponse
@@ -141,6 +142,49 @@ class ProvinceRepository(
                     }
                 } else {
                     Result.failure(Exception("Province code is not JBR"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    suspend fun getDiypVehicleInfo(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String
+    ): Result<DiypPajakResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                if (provinceCode == "DIY") {
+                    val noPolisi = "$headPlat $bodyPlat $tailPlat".trim()
+                    val response = api.getDiypPajakInfo(
+                        nomer = bodyPlat.uppercase(Locale.ROOT),
+                        kodeBelakang = tailPlat.uppercase(Locale.ROOT)
+                    )
+                    if (response.isSuccessful && response.body() != null) {
+                        val responseBody = response.body()!!
+                        
+                        // Save to history if data is found (not null)
+                        if (responseBody.status == "success" && responseBody.data != null) {
+                            val gson = Gson()
+                            val jsonData = gson.toJson(responseBody)
+                            val history = History(
+                                code = noPolisi.uppercase(),
+                                requestDate = Date(),
+                                region = "DIY",
+                                data = jsonData
+                            )
+                            dao.insertHistory(history)
+                        }
+                        
+                        Result.success(responseBody)
+                    } else {
+                        Result.failure(Exception("Failed to get vehicle info: ${response.code()}"))
+                    }
+                } else {
+                    Result.failure(Exception("Province code is not DIY"))
                 }
             } catch (e: Exception) {
                 Result.failure(e)
