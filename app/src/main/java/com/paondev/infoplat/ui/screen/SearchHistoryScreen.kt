@@ -26,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.gson.Gson
 import com.paondev.infoplat.data.api.JabarPajakResponse
+import com.paondev.infoplat.data.api.JatimPkbResponse
 import com.paondev.infoplat.navigation.VehicleDetailDestination
 import com.paondev.infoplat.ui.theme.*
 import com.paondev.infoplat.ui.viewmodel.HistoryDisplayItem
@@ -123,9 +124,22 @@ fun SearchHistoryScreen(
                     HistoryListItem(
                         item = item,
                         navigateToDetail = { 
-                            val route = VehicleDetailDestination.createRoute(
+                            // Parse data based on region
+                            val response: JabarPajakResponse = try {
+                                when (item.region) {
+                                    "JTM" -> {
+                                        val jatimResponse = Gson().fromJson(item.responseData, JatimPkbResponse::class.java)
+                                        convertJatimToJabar(jatimResponse)
+                                    }
+                                    else -> {
+                                        Gson().fromJson(item.responseData, JabarPajakResponse::class.java)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                // Fallback: try parsing as Jabar response
                                 Gson().fromJson(item.responseData, JabarPajakResponse::class.java)
-                            )
+                            }
+                            val route = VehicleDetailDestination.createRoute(response)
                             navController.navigate(route)
                         },
                         onDelete = { viewModel.deleteHistoryItem(item.id) }

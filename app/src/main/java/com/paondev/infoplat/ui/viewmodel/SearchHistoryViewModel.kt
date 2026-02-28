@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.paondev.infoplat.data.api.JabarPajakResponse
+import com.paondev.infoplat.data.api.JatimPkbResponse
 import com.paondev.infoplat.data.locale.InfoPlatDao
 import com.paondev.infoplat.model.History
 import com.paondev.infoplat.ui.screen.RecentSearch
@@ -25,7 +26,8 @@ data class HistoryDisplayItem(
     val date: String,
     val requestDate: Date,
     val responseData: String,
-    val isMotorcycle: Boolean = false
+    val isMotorcycle: Boolean = false,
+    val region: String = ""
 )
 
 @HiltViewModel
@@ -53,11 +55,28 @@ class SearchHistoryViewModel @Inject constructor(
             dao.getAllHistory().collect { historyList ->
                 val displayItems = historyList.mapNotNull { history ->
                     try {
-                        val response = Gson().fromJson(history.data, JabarPajakResponse::class.java)
+                        // Parse data based on region
+                        val jabarResponse: JabarPajakResponse? = when (history.region) {
+                            "JTM" -> {
+                                // Parse JTM data and convert to Jabar format
+                                try {
+                                    val jatimResponse = Gson().fromJson(history.data, JatimPkbResponse::class.java)
+                                    com.paondev.infoplat.ui.screen.convertJatimToJabar(jatimResponse)
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            }
+                            else -> {
+                                // Parse as Jabar response (default)
+                                Gson().fromJson(history.data, JabarPajakResponse::class.java)
+                            }
+                        }
+                        
+                        if (jabarResponse == null) return@mapNotNull null
                         
                         // Extract vehicle model from response data
-                        val model = response.data?.namaModel ?: "Unknown"
-                        val jenis = response.data?.jenis ?: ""
+                        val model = jabarResponse.data?.namaModel ?: "Unknown"
+                        val jenis = jabarResponse.data?.jenis ?: ""
                         
                         // Determine if it's a motorcycle
                         val isMotorcycle = jenis.lowercase().contains("motor") || 
@@ -72,7 +91,8 @@ class SearchHistoryViewModel @Inject constructor(
                             date = dateFormatter.format(history.requestDate),
                             requestDate = history.requestDate,
                             responseData = history.data,
-                            isMotorcycle = isMotorcycle
+                            isMotorcycle = isMotorcycle,
+                            region = history.region
                         )
                     } catch (e: Exception) {
                         null
@@ -85,7 +105,23 @@ class SearchHistoryViewModel @Inject constructor(
                     .sortedByDescending { it.requestDate }
                     .take(2)
                     .map { displayItem ->
-                        val response = Gson().fromJson(displayItem.responseData, JabarPajakResponse::class.java)
+                        val response: JabarPajakResponse? = try {
+                            // Try parsing based on region
+                            when (displayItem.region) {
+                                "JTM" -> {
+                                    val jatimResponse = Gson().fromJson(displayItem.responseData, JatimPkbResponse::class.java)
+                                    com.paondev.infoplat.ui.screen.convertJatimToJabar(jatimResponse)
+                                }
+                                else -> {
+                                    Gson().fromJson(displayItem.responseData, JabarPajakResponse::class.java)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            null
+                        }
+                        
+                        if (response == null) return@map null
+                        
                         val status = if (response.data?.canBePaid == false) VehicleStatus.CLEAN else VehicleStatus.TAX_DUE
                         
                         RecentSearch(
@@ -94,7 +130,7 @@ class SearchHistoryViewModel @Inject constructor(
                             status = status,
                             statusLabel = if (status == VehicleStatus.CLEAN) "Paid" else "Due"
                         )
-                    }
+                    }.filterNotNull()
                 _recentHistory.value = recentItems
             }
         }
