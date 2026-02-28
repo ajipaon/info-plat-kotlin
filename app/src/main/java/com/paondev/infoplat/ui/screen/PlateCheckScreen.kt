@@ -1,6 +1,9 @@
 package com.paondev.infoplat.ui.screen
 
+import android.util.Base64
+import android.graphics.BitmapFactory
 import androidx.compose.foundation.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +19,9 @@ import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.paondev.infoplat.data.api.JabarPajakData
 import com.paondev.infoplat.data.api.JabarPajakResponse
@@ -588,6 +594,24 @@ fun NoRangkaInput(
     }
 }
 
+// Helper function to decode base64 image string to ImageBitmap
+fun decodeBase64ToImageBitmap(base64String: String): ImageBitmap? {
+    return try {
+        val dataUrlPrefix = "data:image/png;base64,"
+        val base64Data = if (base64String.startsWith(dataUrlPrefix)) {
+            base64String.substring(dataUrlPrefix.length)
+        } else {
+            base64String
+        }
+        
+        val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
+        val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+        bitmap?.asImageBitmap()
+    } catch (e: Exception) {
+        null
+    }
+}
+
 @Composable
 fun CaptchaSection(
     captchaImage: String?,
@@ -620,12 +644,21 @@ fun CaptchaSection(
                         color = MaterialTheme.colorScheme.tertiary
                     )
                 } else if (captchaImage != null) {
-                    AsyncImage(
-                        model = captchaImage,
-                        contentDescription = "CAPTCHA",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
-                    )
+                    val bitmap = decodeBase64ToImageBitmap(captchaImage)
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap,
+                            contentDescription = "CAPTCHA",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
+                        )
+                    } else {
+                        Text(
+                            "Gagal memuat gambar CAPTCHA",
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp
+                        )
+                    }
                 } else {
                     Text(
                         "Gagal memuat CAPTCHA",

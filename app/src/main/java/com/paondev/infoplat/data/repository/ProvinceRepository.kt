@@ -1,5 +1,6 @@
 package com.paondev.infoplat.data.repository
 
+import androidx.compose.ui.text.toUpperCase
 import com.google.gson.Gson
 import com.paondev.infoplat.BuildConfig
 import com.paondev.infoplat.data.Province
@@ -18,6 +19,7 @@ import com.paondev.infoplat.model.History
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -70,7 +72,7 @@ class ProvinceRepository(
                     timestamp = System.currentTimeMillis(),
                     sessionId = sessionId,
                     code = captchaCode,
-                    nopol = nopol,
+                    nopol = nopol.uppercase(Locale.ROOT),
                     norang = norang
                 )
                 val response = jatimApi.verifyJatimCaptcha(request = request)

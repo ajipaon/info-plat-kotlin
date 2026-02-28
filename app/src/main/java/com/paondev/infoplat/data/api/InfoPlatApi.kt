@@ -62,8 +62,17 @@ interface InfoPlatApi {
         @Header("user-agent") userAgent: String = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
     ): Response<JatimCaptchaResponse>
 
-    @POST()
+    @POST
     suspend fun verifyJatimCaptcha(
         @Url url: String = BuildConfig.JATIM_PAJAK_API_URL,
-        @Body request: JatimPkbRequest): Response<JatimPkbResponse>
+
+        @Header("accept") accept: String = "application/json",
+        @Header("accept-language") acceptLanguage: String = "en-US,en;q=0.6",
+        @Header("origin") origin: String = "https://bapenda.jatimprov.go.id",
+        @Header("referer") referer: String = "https://bapenda.jatimprov.go.id/info/pkb",
+        @Header("user-agent") userAgent: String = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+        @Header("x-app-token") appToken: String = "bapenda-jatim-info-layanan-2025",
+        @Header("x-requested-with") requestedWith: String = "XMLHttpRequest",
+        @Body request: JatimPkbRequest
+    ): Response<JatimPkbResponse>
 }
