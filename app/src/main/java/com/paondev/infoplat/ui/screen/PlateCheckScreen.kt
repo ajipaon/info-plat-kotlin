@@ -20,6 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.paondev.infoplat.data.api.JabarPajakResponse
 import com.paondev.infoplat.data.repository.ProvinceRepository
 import com.paondev.infoplat.ui.viewmodel.ProvinceViewModel
+import com.paondev.infoplat.ui.viewmodel.SearchHistoryViewModel
 import com.paondev.infoplat.navigation.VehicleDetailDestination
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.google.gson.Gson
 import com.paondev.infoplat.navigation.SearchHistoryDestination
 import com.paondev.infoplat.ui.components.ProvinceSelectorCard
 import com.paondev.infoplat.ui.theme.*
@@ -47,9 +49,11 @@ import com.paondev.infoplat.ui.theme.*
 fun PlateCheckScreen(
     navController: NavController,
     padding: PaddingValues = PaddingValues(0.dp),
-    viewModel: ProvinceViewModel = hiltViewModel()
+    viewModel: ProvinceViewModel = hiltViewModel(),
+    searchHistoryViewModel: SearchHistoryViewModel = hiltViewModel()
 ) {
     val selectedProvince by viewModel.selectedProvince.collectAsState()
+    val recentHistory by searchHistoryViewModel.recentHistory.collectAsState()
     var headPlat by remember { mutableStateOf("") }
     var bodyPlat by remember { mutableStateOf("") }
     var tailPlat by remember { mutableStateOf("") }
@@ -99,16 +103,30 @@ fun PlateCheckScreen(
             )
         }
 
-        item {
-            RecentSearchesHeader(
-                toHistory = {
-                    navController.navigate(SearchHistoryDestination.route)
-                }
-            )
-        }
+        if (recentHistory.isNotEmpty()) {
+            item {
+                RecentSearchesHeader(
+                    toHistory = {
+                        navController.navigate(SearchHistoryDestination.route)
+                    }
+                )
+            }
 
-        items(recentSearchesRevised) { search ->
-            RecentSearchCard(search)
+            items(recentHistory) { search ->
+                RecentSearchCard(
+                    search = search,
+                    onClick = {
+                        try {
+                            if (search.data.isNotEmpty()) {
+                                val response = Gson().fromJson(search.data, JabarPajakResponse::class.java)
+                                navController.navigate(VehicleDetailDestination.createRoute(response))
+                            }
+                        } catch (e: Exception) {
+                            // Handle error silently
+                        }
+                    }
+                )
+            }
         }
 
         item {
@@ -367,7 +385,8 @@ fun RecentSearchesHeader(
 
 @Composable
 fun RecentSearchCard(
-    search: RecentSearch
+    search: RecentSearch,
+    onClick: () -> Unit = {}
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -376,7 +395,7 @@ fun RecentSearchCard(
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* TODO */ }
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -521,24 +540,8 @@ data class RecentSearch(
     val carModel: String,
     val status: VehicleStatus,
     val statusLabel: String,
+    val data: String = "",
     val imageUrl: String? = null
-)
-
-val recentSearchesRevised = listOf(
-    RecentSearch(
-        plate = "B 8992 GZ",
-        carModel = "2018 Toyota Camry • Jakarta",
-        status = VehicleStatus.CLEAN,
-        statusLabel = "Paid",
-        imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuCsVDYAuAYanw_gUz2Ygc5yiMY2CZlxEZGmU3KKJGJmprDEoLV8GrCrWVCcmipLdNfn2Gh9xbvlQx8wFye0l4Mxinnzqc3Uia-IJPF-VfEgvs167xhn0UBYkqREqhsGt7eGqFyW-m7JMMx0u2mF8CILDzHwJsk-aEHPXxYfrAFsVMGhFePbgqakaGNZEs4AMQ1u5-j3Q_yTxy_KvZcxj4ribhaoOz26L106RpqIitXU3y3kvcAQGZSig__WkYVlLokppazpCtxia1fx"
-    ),
-    RecentSearch(
-        plate = "B 1010 LUV",
-        carModel = "2021 Ford Mustang • Jakarta",
-        status = VehicleStatus.STOLEN,
-        statusLabel = "Blocked",
-        imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuCRxHOlUzd6AUR6ZwuvdDNyv3fxy0UjjGLa56IDQKjWRu-ZmVbYMk-PD6Yfhp4hcUlr1iJ9lo28Ax41b0xEPTLXp3Pe9HVvrINxhB_xsUUd2pRTyvIYy5zkfvI5OAGjwEKVh9W8-kbtlEZj2FESYIOPDriMpTfm8QRIGhohDKlxlFRVa4eEuHHQtSL72RUsE3Nke6ujZo9sAfHJhSSwzaEL1Vw0rQmoOImPcM2TbmyZqGgNYqLKFRgTpIYwDR1wxyaEr34qTNAhdjRd"
-    )
 )
 
 //@Preview(showBackground = false)

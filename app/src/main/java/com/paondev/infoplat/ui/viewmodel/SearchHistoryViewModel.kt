@@ -6,6 +6,8 @@ import com.google.gson.Gson
 import com.paondev.infoplat.data.api.JabarPajakResponse
 import com.paondev.infoplat.data.locale.InfoPlatDao
 import com.paondev.infoplat.model.History
+import com.paondev.infoplat.ui.screen.RecentSearch
+import com.paondev.infoplat.ui.screen.VehicleStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +23,7 @@ data class HistoryDisplayItem(
     val plate: String,
     val model: String,
     val date: String,
+    val requestDate: Date,
     val responseData: String,
     val isMotorcycle: Boolean = false
 )
@@ -32,6 +35,9 @@ class SearchHistoryViewModel @Inject constructor(
 
     private val _historyItems = MutableStateFlow<List<HistoryDisplayItem>>(emptyList())
     val historyItems: StateFlow<List<HistoryDisplayItem>> = _historyItems.asStateFlow()
+
+    private val _recentHistory = MutableStateFlow<List<RecentSearch>>(emptyList())
+    val recentHistory: StateFlow<List<RecentSearch>> = _recentHistory.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -64,6 +70,7 @@ class SearchHistoryViewModel @Inject constructor(
                             plate = history.code,
                             model = "$model $jenis".trim(),
                             date = dateFormatter.format(history.requestDate),
+                            requestDate = history.requestDate,
                             responseData = history.data,
                             isMotorcycle = isMotorcycle
                         )
@@ -72,6 +79,23 @@ class SearchHistoryViewModel @Inject constructor(
                     }
                 }
                 _historyItems.value = displayItems
+
+                // Update recent history (max 2, sorted by date descending)
+                val recentItems = displayItems
+                    .sortedByDescending { it.requestDate }
+                    .take(2)
+                    .map { displayItem ->
+                        val response = Gson().fromJson(displayItem.responseData, JabarPajakResponse::class.java)
+                        val status = if (response.data?.canBePaid == false) VehicleStatus.CLEAN else VehicleStatus.TAX_DUE
+                        
+                        RecentSearch(
+                            plate = displayItem.plate,
+                            carModel = "${response.data?.tahunBuatan ?: ""} ${displayItem.model}".trim(),
+                            status = status,
+                            statusLabel = if (status == VehicleStatus.CLEAN) "Paid" else "Due"
+                        )
+                    }
+                _recentHistory.value = recentItems
             }
         }
     }
