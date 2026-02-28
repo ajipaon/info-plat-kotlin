@@ -84,7 +84,7 @@ class ProvinceRepository(
                         val gson = Gson()
                         val jsonData = gson.toJson(responseBody)
                         val history = History(
-                            code = nopol,
+                            code = nopol.uppercase(),
                             requestDate = Date(),
                             region = "JTM",
                             data = jsonData
@@ -128,7 +128,7 @@ class ProvinceRepository(
                         val gson = Gson()
                         val jsonData = gson.toJson(responseBody)
                         val history = History(
-                            code = noPolisi,
+                            code = noPolisi.uppercase(),
                             requestDate = Date(),
                             region = "JBR",
                             data = jsonData
