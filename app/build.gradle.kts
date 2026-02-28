@@ -57,7 +57,6 @@ android {
         buildConfigField("String", "DIYP_PAJAK_API_URL", "\"$DiypPajakApiUrl\"")
         buildConfigField("String", "API_URL_INFO_PLAT", "\"$apiUrlInfoPlat\"")
     }
-    //BANTEN_PAJAK_API_URL
 
     buildTypes {
         debug {
