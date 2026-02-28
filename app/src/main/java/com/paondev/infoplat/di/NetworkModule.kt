@@ -20,8 +20,16 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    @MainApi
     fun provideInfoPlatApi(): InfoPlatApi {
         return RetrofitClient.apiService
+    }
+
+    @Provides
+    @Singleton
+    @com.paondev.infoplat.di.JatimApi
+    fun provideJatimApi(): InfoPlatApi {
+        return RetrofitClient.jatimApiService
     }
 
     @Provides
@@ -38,7 +46,11 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideProvinceRepository(api: InfoPlatApi, dao: InfoPlatDao): ProvinceRepository {
-        return ProvinceRepository(api, dao)
+    fun provideProvinceRepository(
+        @MainApi api: InfoPlatApi,
+        @com.paondev.infoplat.di.JatimApi jatimApi: InfoPlatApi,
+        dao: InfoPlatDao
+    ): ProvinceRepository {
+        return ProvinceRepository(api, dao, jatimApi)
     }
 }

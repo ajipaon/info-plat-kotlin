@@ -6,17 +6,25 @@ import com.paondev.infoplat.data.Province
 import com.paondev.infoplat.data.api.InfoPlatApi
 import com.paondev.infoplat.data.api.JabarPajakRequest
 import com.paondev.infoplat.data.api.JabarPajakResponse
+import com.paondev.infoplat.data.api.JatimCaptchaResponse
+import com.paondev.infoplat.data.api.JatimPkbRequest
+import com.paondev.infoplat.data.api.JatimPkbResponse
 import com.paondev.infoplat.data.api.toProvince
 import com.paondev.infoplat.data.allProvinces
 import com.paondev.infoplat.data.locale.InfoPlatDao
+import com.paondev.infoplat.di.JatimApi
+import com.paondev.infoplat.di.MainApi
 import com.paondev.infoplat.model.History
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Date
+import javax.inject.Inject
+import javax.inject.Singleton
 
 class ProvinceRepository(
-    private val api: InfoPlatApi,
-    private val dao: InfoPlatDao
+    @MainApi private val api: InfoPlatApi,
+    private val dao: InfoPlatDao,
+    @JatimApi private val jatimApi: InfoPlatApi
 ) {
     suspend fun getProvinces(): Result<List<Province>> {
         return withContext(Dispatchers.IO) {
@@ -31,6 +39,63 @@ class ProvinceRepository(
             } catch (e: Exception) {
                 // Fallback ke data hardcoded jika API gagal
                 Result.success(allProvinces)
+            }
+        }
+    }
+
+    suspend fun getJatimCaptcha(): Result<JatimCaptchaResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = jatimApi.getJatimCaptcha()
+                if (response.isSuccessful && response.body() != null) {
+                    Result.success(response.body()!!)
+                } else {
+                    Result.failure(Exception("Failed to generate captcha: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    suspend fun getJatimVehicleInfo(
+        sessionId: String,
+        captchaCode: String,
+        nopol: String,
+        norang: String
+    ): Result<JatimPkbResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = JatimPkbRequest(
+                    timestamp = System.currentTimeMillis(),
+                    sessionId = sessionId,
+                    code = captchaCode,
+                    nopol = nopol,
+                    norang = norang
+                )
+                val response = jatimApi.verifyJatimCaptcha(request = request)
+                if (response.isSuccessful && response.body() != null) {
+                    val responseBody = response.body()!!
+                    
+                    // Save to history if successful
+                    if (responseBody.status == "success" && responseBody.data != null) {
+                        val gson = Gson()
+                        val jsonData = gson.toJson(responseBody)
+                        val history = History(
+                            code = nopol,
+                            requestDate = Date(),
+                            region = "JTM",
+                            data = jsonData
+                        )
+                        dao.insertHistory(history)
+                    }
+                    
+                    Result.success(responseBody)
+                } else {
+                    Result.failure(Exception("Failed to verify captcha: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
             }
         }
     }

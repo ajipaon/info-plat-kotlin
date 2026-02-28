@@ -53,4 +53,17 @@ interface InfoPlatApi {
         @Header("api-key") apiKey: String = BuildConfig.JABAR_PAJAK_API_KEY,
         @Header("user-agen") userAgent: String = "Dart/3.9 (dart:io)"
     ): Response<JabarPajakResponse>
+
+    @POST()
+    suspend fun getJatimCaptcha(
+        @Url url: String = BuildConfig.JATIM_CAPTCHA_URL,
+        @Header("origin") origin : String  = "https://bapenda.jatimprov.go.id",
+        @Header("referer") referer : String  = "https://bapenda.jatimprov.go.id/info/pkb",
+        @Header("user-agent") userAgent: String = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+    ): Response<JatimCaptchaResponse>
+
+    @POST()
+    suspend fun verifyJatimCaptcha(
+        @Url url: String = BuildConfig.JATIM_PAJAK_API_URL,
+        @Body request: JatimPkbRequest): Response<JatimPkbResponse>
 }

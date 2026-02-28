@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     private const val BASE_URL = "https://info-plat.ajisetiawan883.workers.dev/"
+    private const val JATIM_BASE_URL = "https://bapenda.jatimprov.go.id/"
 
     private val okHttpClient: OkHttpClient by lazy {
         val builder = OkHttpClient.Builder()
@@ -41,6 +42,15 @@ object RetrofitClient {
     val apiService: InfoPlatApi by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(InfoPlatApi::class.java)
+    }
+    
+    val jatimApiService: InfoPlatApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(JATIM_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

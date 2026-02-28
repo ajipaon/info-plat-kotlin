@@ -17,7 +17,16 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.paondev.infoplat.data.api.JabarPajakData
 import com.paondev.infoplat.data.api.JabarPajakResponse
+import com.paondev.infoplat.data.api.InfoPkbPnpb
+import com.paondev.infoplat.data.api.InfoPembayaran
+import com.paondev.infoplat.data.api.TaxDetail
+import com.paondev.infoplat.data.api.PnpbDetail
+import com.paondev.infoplat.data.api.InfoTransaksi
+import com.paondev.infoplat.data.api.AvailablePaymentMethods
+import com.paondev.infoplat.data.api.MasaPajak
+import com.paondev.infoplat.data.api.JatimPkbResponse
 import com.paondev.infoplat.data.repository.ProvinceRepository
 import com.paondev.infoplat.ui.viewmodel.ProvinceViewModel
 import com.paondev.infoplat.ui.viewmodel.SearchHistoryViewModel
@@ -34,6 +43,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -54,11 +64,25 @@ fun PlateCheckScreen(
 ) {
     val selectedProvince by viewModel.selectedProvince.collectAsState()
     val recentHistory by searchHistoryViewModel.recentHistory.collectAsState()
+    val captchaData by viewModel.captchaData.collectAsState()
+    val captchaError by viewModel.captchaError.collectAsState()
+    val isCaptchaLoading by viewModel.isCaptchaLoading.collectAsState()
+    
     var headPlat by remember { mutableStateOf("") }
     var bodyPlat by remember { mutableStateOf("") }
     var tailPlat by remember { mutableStateOf("") }
+    var noRangka by remember { mutableStateOf("") }
+    var captchaCode by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
+    
+    // Reset states when province changes
+    LaunchedEffect(selectedProvince?.kode) {
+        captchaCode = ""
+        noRangka = ""
+        errorMessage = null
+    }
     
     LazyColumn(
         modifier = Modifier
@@ -74,30 +98,102 @@ fun PlateCheckScreen(
 
         item {
             PlateCheckHeroSection(
+                selectedProvince = selectedProvince,
                 headPlat = headPlat,
                 onHeadPlatChange = { headPlat = it },
                 bodyPlat = bodyPlat,
                 onBodyPlatChange = { bodyPlat = it },
                 tailPlat = tailPlat,
                 onTailPlatChange = { tailPlat = it },
+                noRangka = noRangka,
+                onNoRangkaChange = { noRangka = it },
+                captchaData = captchaData,
+                captchaCode = captchaCode,
+                onCaptchaCodeChange = { captchaCode = it },
                 isLoading = isLoading,
+                isCaptchaLoading = isCaptchaLoading,
+                errorMessage = errorMessage,
+                captchaError = captchaError,
+                onClearError = { 
+                    errorMessage = null
+                    viewModel.clearCaptchaError()
+                },
                 onCheckClick = {
-                    if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty()) {
+                    when (selectedProvince?.kode) {
+                        "JTM" -> {
+                            // Jatim: First generate captcha
+                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() && noRangka.length == 5) {
+                                isLoading = true
+                                coroutineScope.launch {
+                                    viewModel.getJatimCaptcha()
+                                    isLoading = false
+                                }
+                            } else {
+                                errorMessage = if (noRangka.length != 5) {
+                                    "No Rangka harus terdiri dari 5 digit"
+                                } else {
+                                    "Semua field harus diisi"
+                                }
+                            }
+                        }
+                        "JBR" -> {
+                            // Jabar: Direct check
+                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty()) {
+                                isLoading = true
+                                coroutineScope.launch {
+                                    val result = viewModel.getVehicleInfo(
+                                        provinceCode = "JBR",
+                                        headPlat = headPlat,
+                                        bodyPlat = bodyPlat,
+                                        tailPlat = tailPlat
+                                    )
+                                    isLoading = false
+                                    result.onSuccess { response ->
+                                        navController.navigate(VehicleDetailDestination.createRoute(response))
+                                    }.onFailure {
+                                        errorMessage = it.message
+                                    }
+                                }
+                            } else {
+                                errorMessage = "Semua field harus diisi"
+                            }
+                        }
+                        else -> {
+                            errorMessage = "Provinsi ini belum didukung"
+                        }
+                    }
+                },
+                onVerifyCaptchaClick = {
+                    if (captchaCode.isNotEmpty()) {
                         isLoading = true
                         coroutineScope.launch {
-                            val result = viewModel.getVehicleInfo(
-                                provinceCode = selectedProvince?.kode ?: "",
-                                headPlat = headPlat,
-                                bodyPlat = bodyPlat,
-                                tailPlat = tailPlat
+                            val nopol = "$headPlat$bodyPlat$tailPlat".lowercase()
+                            val result = viewModel.getJatimVehicleInfo(
+                                sessionId = captchaData?.sessionId ?: "",
+                                captchaCode = captchaCode,
+                                nopol = nopol,
+                                norang = noRangka
                             )
                             isLoading = false
                             result.onSuccess { response ->
-                                navController.navigate(VehicleDetailDestination.createRoute(response))
+                                if (response.status == "success") {
+                                    // Convert Jatim response to Jabar response format for navigation
+                                    val jabarResponse = convertJatimToJabar(response)
+                                    navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                } else {
+                                    errorMessage = response.message ?: "Gagal memverifikasi captcha"
+                                }
                             }.onFailure {
-                                // Handle error - show toast or snackbar
+                                errorMessage = it.message
                             }
                         }
+                    } else {
+                        errorMessage = "Kode captcha harus diisi"
+                    }
+                },
+                onRefreshCaptcha = {
+                    coroutineScope.launch {
+                        viewModel.getJatimCaptcha()
                     }
                 }
             )
@@ -137,18 +233,33 @@ fun PlateCheckScreen(
 
 @Composable
 fun PlateCheckHeroSection(
+    selectedProvince: com.paondev.infoplat.data.Province?,
     headPlat: String,
     onHeadPlatChange: (String) -> Unit,
     bodyPlat: String,
     onBodyPlatChange: (String) -> Unit,
     tailPlat: String,
     onTailPlatChange: (String) -> Unit,
+    noRangka: String,
+    onNoRangkaChange: (String) -> Unit,
+    captchaData: com.paondev.infoplat.data.api.JatimCaptchaResponse?,
+    captchaCode: String,
+    onCaptchaCodeChange: (String) -> Unit,
     isLoading: Boolean,
-    onCheckClick: () -> Unit
+    isCaptchaLoading: Boolean,
+    errorMessage: String?,
+    captchaError: String?,
+    onClearError: () -> Unit,
+    onCheckClick: () -> Unit,
+    onVerifyCaptchaClick: () -> Unit,
+    onRefreshCaptcha: () -> Unit
 ) {
+    val isJatim = selectedProvince?.kode == "JTM"
+    val showCaptcha = isJatim && captchaData != null
+
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = "Cek pajak kendaraan",
+            text = if (showCaptcha) "Verifikasi CAPTCHA" else "Cek pajak kendaraan",
             style = TextStyle(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.ExtraBold,
@@ -157,7 +268,7 @@ fun PlateCheckHeroSection(
             )
         )
         Text(
-            text = "Masukkan plat nomor kendaraan",
+            text = if (showCaptcha) "Masukkan kode yang terlihat pada gambar" else "Masukkan plat nomor kendaraan",
             style = TextStyle(
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
@@ -174,20 +285,62 @@ fun PlateCheckHeroSection(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                LicensePlateInput(
-                    headPlat = headPlat,
-                    onHeadPlatChange = onHeadPlatChange,
-                    bodyPlat = bodyPlat,
-                    onBodyPlatChange = onBodyPlatChange,
-                    tailPlat = tailPlat,
-                    onTailPlatChange = onTailPlatChange
-                )
+                if (showCaptcha) {
+                    // Show CAPTCHA for Jatim
+                    CaptchaSection(
+                        captchaImage = captchaData?.image,
+                        captchaCode = captchaCode,
+                        onCaptchaCodeChange = onCaptchaCodeChange,
+                        isLoading = isCaptchaLoading,
+                        onRefreshCaptcha = onRefreshCaptcha
+                    )
+                } else {
+                    // Show license plate input
+                    LicensePlateInput(
+                        headPlat = headPlat,
+                        onHeadPlatChange = onHeadPlatChange,
+                        bodyPlat = bodyPlat,
+                        onBodyPlatChange = onBodyPlatChange,
+                        tailPlat = tailPlat,
+                        onTailPlatChange = onTailPlatChange
+                    )
+
+                    // Show No Rangka input for Jatim
+                    if (isJatim) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        NoRangkaInput(
+                            noRangka = noRangka,
+                            onNoRangkaChange = onNoRangkaChange
+                        )
+                    }
+                }
+
+                // Error message
+                if (errorMessage != null || captchaError != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = errorMessage ?: captchaError ?: "",
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            color = Color.Red,
+                            textAlign = TextAlign.Center
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = onCheckClick,
-                    enabled = !isLoading && headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty(),
+                    onClick = if (showCaptcha) onVerifyCaptchaClick else onCheckClick,
+                    enabled = !isLoading && !isCaptchaLoading && (
+                        if (showCaptcha) {
+                            captchaCode.isNotEmpty()
+                        } else {
+                            headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() &&
+                            if (isJatim) noRangka.length == 5 else true
+                        }
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
@@ -202,9 +355,33 @@ fun PlateCheckHeroSection(
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Icon(Icons.Default.Search, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Cek Pajak", fontWeight = FontWeight.Bold)
+                    if (isLoading || isCaptchaLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Icon(
+                            if (showCaptcha) Icons.Default.Check else Icons.Default.Search,
+                            contentDescription = null
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            if (showCaptcha) "Verifikasi" else "Cek Pajak",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                
+                // Back button when showing captcha
+                if (showCaptcha) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    TextButton(
+                        onClick = onClearError,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Kembali")
+                    }
                 }
 
 //                Row(
@@ -352,6 +529,268 @@ fun PlateTextField(placeholder: String, length: Int, modifier: Modifier, default
             }
         }
     )
+}
+
+@Composable
+fun NoRangkaInput(
+    noRangka: String,
+    onNoRangkaChange: (String) -> Unit
+) {
+    Column {
+        Text(
+            text = "No Rangka (5 digit terakhir)",
+            style = TextStyle(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        BasicTextField(
+            value = noRangka,
+            onValueChange = { 
+                if (it.length <= 5 && it.all { char -> char.isDigit() }) {
+                    onNoRangkaChange(it)
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.background)
+                .border(2.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(12.dp))
+                .padding(horizontal = 16.dp),
+            textStyle = TextStyle(
+                color = MaterialTheme.colorScheme.tertiary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
+            ),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.tertiary),
+            decorationBox = { innerTextField ->
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (noRangka.isEmpty()) {
+                        Text(
+                            "12345",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun CaptchaSection(
+    captchaImage: String?,
+    captchaCode: String,
+    onCaptchaCodeChange: (String) -> Unit,
+    isLoading: Boolean,
+    onRefreshCaptcha: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // CAPTCHA Image
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.background
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+                .clip(RoundedCornerShape(12.dp))
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                } else if (captchaImage != null) {
+                    AsyncImage(
+                        model = captchaImage,
+                        contentDescription = "CAPTCHA",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+                } else {
+                    Text(
+                        "Gagal memuat CAPTCHA",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Refresh CAPTCHA button
+        TextButton(
+            onClick = onRefreshCaptcha,
+            enabled = !isLoading
+        ) {
+            Icon(
+                Icons.Default.Refresh,
+                contentDescription = "Refresh CAPTCHA",
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.tertiary
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                "Refresh CAPTCHA",
+                color = MaterialTheme.colorScheme.tertiary
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // CAPTCHA Input
+        Column {
+            Text(
+                text = "Kode CAPTCHA",
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            BasicTextField(
+                value = captchaCode,
+                onValueChange = onCaptchaCodeChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.background)
+                    .border(2.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 16.dp),
+                textStyle = TextStyle(
+                    color = MaterialTheme.colorScheme.tertiary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    letterSpacing = 2.sp
+                ),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.tertiary),
+                decorationBox = { innerTextField ->
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (captchaCode.isEmpty()) {
+                            Text(
+                                "Masukkan kode",
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                fontSize = 16.sp
+                            )
+                        }
+                        innerTextField()
+                    }
+                }
+            )
+        }
+    }
+}
+
+// Helper function to convert Jatim response to Jabar response format
+fun convertJatimToJabar(jatimResponse: com.paondev.infoplat.data.api.JatimPkbResponse): JabarPajakResponse {
+    val data = jatimResponse.data
+    return if (data?.identitas != null) {
+        val pkbValue = data.biayaPenul1Tahunan?.pkb ?: "0"
+        val opsenValue = data.biayaPenul1Tahunan?.opsenPkb ?: "0"
+        val swdklljValue = data.biayaPenul1Tahunan?.swdkllj ?: "0"
+        val totalValue = data.biayaPenul1Tahunan?.total ?: 0
+        
+        JabarPajakResponse(
+            status = true,
+            message = data.keterangan?.ket ?: "Data ditemukan",
+            code = "200",
+            data = JabarPajakData(
+                namaMerk = data.identitas.merk,
+                jenis = data.identitas.model,
+                tahunBuatan = data.identitas.tahunBuat,
+                milikKe = "1",
+                namaModel = data.identitas.type,
+                warna = data.identitas.warna,
+                noPolisi = data.identitas.nopol,
+                infoPkbPnpb = InfoPkbPnpb(
+                    tanggalPajak = data.identitas.tglMasaPajak,
+                    tanggalStnk = data.identitas.tglMasaPajak,
+                    wilayah = "JATIM"
+                ),
+                infoPembayaran = InfoPembayaran(
+                    pkb = TaxDetail(pokok = pkbValue, denda = "0"),
+                    opsen = TaxDetail(pokok = opsenValue, denda = "0"),
+                    swdkllj = TaxDetail(pokok = swdklljValue, denda = "0"),
+                    pnpb = PnpbDetail(stnk = "100000", tnkb = "60000"),
+                    jumlah = totalValue.toString()
+                ),
+                infoKendaraan = mapOf(
+                    "merk" to data.identitas.merk,
+                    "type" to data.identitas.type,
+                    "tahun" to data.identitas.tahunBuat
+                ),
+                waktuProses = "",
+                keterangan = data.keterangan?.ket ?: "Data ditemukan",
+                isFiveYear = false,
+                isBlocked = false,
+                blockedDescription = "",
+                isCompany = false,
+                canBePaid = true,
+                infoTransaksi = InfoTransaksi(
+                    kendaraanMilik = "1",
+                    waktuTransaksi = "",
+                    waktuKadaluarsa = "",
+                    durasiKadaluarsa = 0,
+                    waktuTunggu = "",
+                    durasiTunggu = 0,
+                    waktuTungguPembayaran = "",
+                    durasiTungguPembayaran = 0,
+                    expiredVerificationTime = null,
+                    kodeBayar = "",
+                    nominalPembayaran = totalValue.toString(),
+                    status = "success",
+                    ableToPaymentChecking = true,
+                    institution = "BAPENDA JATIM",
+                    institutionGateway = "BAPENDA JATIM"
+                ),
+                isCutOff = false,
+                availablePaymentMethods = AvailablePaymentMethods(
+                    kodeBayar = false,
+                    qris = true,
+                    va = true,
+                    finpay = false
+                ),
+                masaPajak = MasaPajak(
+                    tanggalJatuhTempoSebelumnya = data.identitas.tglMasaPajak,
+                    tanggalBerlakuSampai = data.identitas.tglMasaPajak
+                )
+            )
+        )
+    } else {
+        JabarPajakResponse(
+            status = false,
+            message = jatimResponse.message ?: "Data tidak ditemukan",
+            code = "404",
+            data = null
+        )
+    }
 }
 
 @Composable
