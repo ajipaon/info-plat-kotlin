@@ -93,4 +93,11 @@ interface InfoPlatApi {
         @Header("User-Agent") userAgent: String = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
         @Header("X-Requested-With") requestedWith: String = "XMLHttpRequest"
     ): Response<DiypPajakResponse>
+
+    @POST
+    suspend fun getBantenPajakInfo(
+        @Url url: String = BuildConfig.API_URL_INFO_PLAT,
+        @Body request: BantenPajakRequest,
+        @Header("Content-Type") contentType: String = "application/json"
+    ): Response<BantenPajakResponse>
 }

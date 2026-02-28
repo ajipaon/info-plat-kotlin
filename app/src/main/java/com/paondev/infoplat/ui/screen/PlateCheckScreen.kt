@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.paondev.infoplat.data.api.BantenPajakResponse
 import com.paondev.infoplat.data.api.DiypPajakData
 import com.paondev.infoplat.data.api.DiypPajakResponse
 import com.paondev.infoplat.data.api.JabarPajakData
@@ -181,6 +182,30 @@ fun PlateCheckScreen(
                                     result.onSuccess { response ->
                                         // Convert DIY response to Jabar response format for navigation
                                         val jabarResponse = convertDiypToJabar(response)
+                                        navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                    }.onFailure {
+                                        errorMessage = it.message
+                                    }
+                                }
+                            } else {
+                                errorMessage = "Semua field harus diisi"
+                            }
+                        }
+                        "BNTN" -> {
+                            // Banten: Direct check
+                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty()) {
+                                isLoading = true
+                                coroutineScope.launch {
+                                    val result = viewModel.getBantenVehicleInfo(
+                                        provinceCode = "BNTN",
+                                        headPlat = headPlat,
+                                        bodyPlat = bodyPlat,
+                                        tailPlat = tailPlat
+                                    )
+                                    isLoading = false
+                                    result.onSuccess { response ->
+                                        // Convert Banten response to Jabar response format for navigation
+                                        val jabarResponse = convertBantenToJabar(response)
                                         navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
                                     }.onFailure {
                                         errorMessage = it.message
@@ -764,6 +789,97 @@ fun CaptchaSection(
                 }
             )
         }
+    }
+}
+
+// Helper function to convert Banten response to Jabar response format
+fun convertBantenToJabar(bantenResponse: BantenPajakResponse): JabarPajakResponse {
+    val data = bantenResponse.data
+    return if (bantenResponse.success && data != null) {
+        val kendaraan = data.kendaraan
+        val pajak = data.pajak
+        val totalValue = pajak.jumlahInt
+        
+        JabarPajakResponse(
+            status = true,
+            message = pajak.keterangan,
+            code = "200",
+            data = JabarPajakData(
+                namaMerk = kendaraan.merek,
+                jenis = kendaraan.jenis,
+                tahunBuatan = kendaraan.tahun,
+                milikKe = "1",
+                namaModel = kendaraan.tipeModel,
+                warna = kendaraan.warna,
+                noPolisi = kendaraan.noPolisi,
+                infoPkbPnpb = InfoPkbPnpb(
+                    tanggalPajak = pajak.tglAkhirPkbYad,
+                    tanggalStnk = pajak.tglAkhirStnkLalu,
+                    wilayah = pajak.kabKota
+                ),
+                infoPembayaran = InfoPembayaran(
+                    pkb = TaxDetail(pokok = pajak.pkbPokok, denda = pajak.pkbDenda),
+                    opsen = TaxDetail(pokok = pajak.opsenPkbPokok, denda = pajak.opsenPkbDenda),
+                    swdkllj = TaxDetail(pokok = pajak.swdklljPokok, denda = pajak.swdklljDenda),
+                    pnpb = PnpbDetail(stnk = pajak.stnk, tnkb = pajak.tnkb),
+                    jumlah = pajak.jumlah
+                ),
+                infoKendaraan = mapOf(
+                    "merk" to kendaraan.merek,
+                    "model" to kendaraan.tipeModel,
+                    "tahun" to kendaraan.tahun,
+                    "cc" to kendaraan.cc,
+                    "bbm" to kendaraan.bbm,
+                    "warna" to kendaraan.warna,
+                    "warnaPlat" to kendaraan.warnaPlat,
+                    "pemilik" to kendaraan.namaPemilik,
+                    "alamat" to kendaraan.alamat,
+                    "noRangkaMesin" to kendaraan.noRangkaMesin
+                ),
+                waktuProses = data.diproses,
+                keterangan = pajak.keterangan,
+                isFiveYear = false,
+                isBlocked = false,
+                blockedDescription = "",
+                isCompany = false,
+                canBePaid = true,
+                infoTransaksi = InfoTransaksi(
+                    kendaraanMilik = "1",
+                    waktuTransaksi = "",
+                    waktuKadaluarsa = "",
+                    durasiKadaluarsa = 0,
+                    waktuTunggu = "",
+                    durasiTunggu = 0,
+                    waktuTungguPembayaran = "",
+                    durasiTungguPembayaran = 0,
+                    expiredVerificationTime = null,
+                    kodeBayar = "",
+                    nominalPembayaran = totalValue.toString(),
+                    status = "success",
+                    ableToPaymentChecking = true,
+                    institution = "SAMSAT BANTEN",
+                    institutionGateway = "SAMSAT BANTEN"
+                ),
+                isCutOff = false,
+                availablePaymentMethods = AvailablePaymentMethods(
+                    kodeBayar = false,
+                    qris = true,
+                    va = true,
+                    finpay = false
+                ),
+                masaPajak = MasaPajak(
+                    tanggalJatuhTempoSebelumnya = pajak.tglAkhirPkbLalu,
+                    tanggalBerlakuSampai = pajak.tglAkhirPkbYad
+                )
+            )
+        )
+    } else {
+        JabarPajakResponse(
+            status = false,
+            message = bantenResponse.message ?: "Data tidak ditemukan",
+            code = "400",
+            data = null
+        )
     }
 }
 

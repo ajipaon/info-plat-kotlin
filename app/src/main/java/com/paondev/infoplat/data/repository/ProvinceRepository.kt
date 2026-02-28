@@ -4,6 +4,8 @@ import androidx.compose.ui.text.toUpperCase
 import com.google.gson.Gson
 import com.paondev.infoplat.BuildConfig
 import com.paondev.infoplat.data.Province
+import com.paondev.infoplat.data.api.BantenPajakRequest
+import com.paondev.infoplat.data.api.BantenPajakResponse
 import com.paondev.infoplat.data.api.DiypPajakResponse
 import com.paondev.infoplat.data.api.InfoPlatApi
 import com.paondev.infoplat.data.api.JabarPajakRequest
@@ -185,6 +187,56 @@ class ProvinceRepository(
                     }
                 } else {
                     Result.failure(Exception("Province code is not DIY"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    suspend fun getBantenVehicleInfo(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String
+    ): Result<BantenPajakResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                if (provinceCode == "BNTN") {
+                    val noPolisi = "$headPlat $bodyPlat $tailPlat".trim()
+                    val request = BantenPajakRequest(
+                        kode = "BNTN",
+                        headPlat = headPlat.uppercase(Locale.ROOT),
+                        bodyPlat = bodyPlat,
+                        tailPlat = tailPlat.uppercase(Locale.ROOT),
+                        noRangka = null
+                    )
+                    val response = api.getBantenPajakInfo(
+                        url = BuildConfig.API_URL_INFO_PLAT,
+                        request = request
+                    )
+                    if (response.isSuccessful && response.body() != null) {
+                        val responseBody = response.body()!!
+                        
+                        // Save to history if data is found (success true with data)
+                        if (responseBody.success && responseBody.data != null) {
+                            val gson = Gson()
+                            val jsonData = gson.toJson(responseBody)
+                            val history = History(
+                                code = noPolisi.uppercase(),
+                                requestDate = Date(),
+                                region = "BNTN",
+                                data = jsonData
+                            )
+                            dao.insertHistory(history)
+                        }
+                        
+                        Result.success(responseBody)
+                    } else {
+                        Result.failure(Exception("Failed to get vehicle info: ${response.code()}"))
+                    }
+                } else {
+                    Result.failure(Exception("Province code is not BNTN"))
                 }
             } catch (e: Exception) {
                 Result.failure(e)
