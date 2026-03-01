@@ -100,4 +100,10 @@ interface InfoPlatApi {
         @Body request: BantenPajakRequest,
         @Header("Content-Type") contentType: String = "application/json"
     ): Response<BantenPajakResponse>
+
+    @POST
+    suspend fun getBaliPajakInfo(
+        @Url url: String = BuildConfig.API_URL_INFO_PLAT,
+        @Body request: BaliPajakRequest
+    ): Response<BaliPajakResponse>
 }

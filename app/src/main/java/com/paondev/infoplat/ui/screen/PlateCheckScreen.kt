@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.paondev.infoplat.data.api.BantenPajakResponse
+import com.paondev.infoplat.data.api.BaliPajakResponse
 import com.paondev.infoplat.data.api.DiypPajakData
 import com.paondev.infoplat.data.api.DiypPajakResponse
 import com.paondev.infoplat.data.api.JabarPajakData
@@ -215,6 +216,35 @@ fun PlateCheckScreen(
                                 errorMessage = "Semua field harus diisi"
                             }
                         }
+                        "BALI" -> {
+                            // Bali: Direct check with no_rangka
+                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() && noRangka.length == 5) {
+                                isLoading = true
+                                coroutineScope.launch {
+                                    val result = viewModel.getBaliVehicleInfo(
+                                        provinceCode = "BALI",
+                                        headPlat = headPlat,
+                                        bodyPlat = bodyPlat,
+                                        tailPlat = tailPlat,
+                                        noRangka = noRangka
+                                    )
+                                    isLoading = false
+                                    result.onSuccess { response ->
+                                        // Convert Bali response to Jabar response format for navigation
+                                        val jabarResponse = convertBaliToJabar(response)
+                                        navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                    }.onFailure {
+                                        errorMessage = it.message
+                                    }
+                                }
+                            } else {
+                                errorMessage = if (noRangka.length != 5) {
+                                    "No Rangka harus terdiri dari 5 digit"
+                                } else {
+                                    "Semua field harus diisi"
+                                }
+                            }
+                        }
                         else -> {
                             errorMessage = "Provinsi ini belum didukung"
                         }
@@ -312,7 +342,9 @@ fun PlateCheckHeroSection(
     onRefreshCaptcha: () -> Unit
 ) {
     val isJatim = selectedProvince?.kode == "JTM"
+    val isBali = selectedProvince?.kode == "BALI"
     val showCaptcha = isJatim && captchaData != null
+    val showNoRangka = isJatim || isBali
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -362,8 +394,8 @@ fun PlateCheckHeroSection(
                         onTailPlatChange = onTailPlatChange
                     )
 
-                    // Show No Rangka input for Jatim
-                    if (isJatim) {
+                    // Show No Rangka input for Jatim and Bali
+                    if (showNoRangka) {
                         Spacer(modifier = Modifier.height(16.dp))
                         NoRangkaInput(
                             noRangka = noRangka,
@@ -962,6 +994,118 @@ fun convertDiypToJabar(diypResponse: DiypPajakResponse): JabarPajakResponse {
             status = false,
             message = "Data tidak ditemukan",
             code = "404",
+            data = null
+        )
+    }
+}
+
+// Helper function to convert Bali response to Jabar response format
+fun convertBaliToJabar(baliResponse: BaliPajakResponse): JabarPajakResponse {
+    val data = baliResponse.data
+    return if (baliResponse.success && data != null) {
+        val detail = data.detail
+        val pembayaranList = data.pembayaran
+        
+        // Extract payment details from the list
+        val pkbItem = pembayaranList.find { it.jenis == "PKB" }
+        val swdklljItem = pembayaranList.find { it.jenis == "SWDKLLJ" }
+        val totalItem = pembayaranList.find { it.jenis == "TOTAL" }
+        
+        val pkbValue = pkbItem?.jumlah ?: "0"
+        val swdklljValue = swdklljItem?.jumlah ?: "0"
+        val totalValue = totalItem?.jumlah ?: "0"
+        
+        // Parse masaBerlaku to extract dates (format: "DD Month YYYY / DD Month YYYY")
+        val masaBerlakuParts = detail.masaBerlaku.split(" / ")
+        val tanggalPajak = if (masaBerlakuParts.isNotEmpty()) masaBerlakuParts[0].trim() else ""
+        val tanggalStnk = if (masaBerlakuParts.size > 1) masaBerlakuParts[1].trim() else ""
+        
+        JabarPajakResponse(
+            status = true,
+            message = detail.status,
+            code = "200",
+            data = JabarPajakData(
+                namaMerk = detail.merk,
+                jenis = detail.model,
+                tahunBuatan = detail.milikKeTahun.split(" / ").getOrNull(1)?.trim() ?: "",
+                milikKe = detail.milikKeTahun.split(" / ").getOrNull(0)?.trim() ?: "1",
+                namaModel = "${detail.merk} ${detail.tipe}",
+                warna = "-",
+                noPolisi = detail.nomorPolisi.split(" (").getOrNull(0)?.trim() ?: detail.nomorPolisi,
+                infoPkbPnpb = InfoPkbPnpb(
+                    tanggalPajak = tanggalPajak,
+                    tanggalStnk = tanggalStnk,
+                    wilayah = "BALI"
+                ),
+                infoPembayaran = InfoPembayaran(
+                    pkb = TaxDetail(
+                        pokok = pkbItem?.pokok ?: "0",
+                        denda = pkbItem?.denda ?: "0"
+                    ),
+                    opsen = TaxDetail(pokok = "0", denda = "0"),
+                    swdkllj = TaxDetail(
+                        pokok = swdklljItem?.pokok ?: "0",
+                        denda = swdklljItem?.denda ?: "0"
+                    ),
+                    pnpb = PnpbDetail(stnk = "0", tnkb = "0"),
+                    jumlah = totalValue
+                ),
+                infoKendaraan = mapOf(
+                    "merk" to detail.merk,
+                    "tipe" to detail.tipe,
+                    "model" to detail.model,
+                    "nama" to detail.nama,
+                    "alamat" to detail.alamat,
+                    "milikKeTahun" to detail.milikKeTahun,
+                    "bahanBakar" to detail.bahanBakar,
+                    "jenisTransaksi" to detail.jenisTransaksi,
+                    "masaBerlaku" to detail.masaBerlaku,
+                    "njkbDppkb" to detail.njkbDppkb,
+                    "tarifPengenaan" to detail.tarifPengenaan,
+                    "masaPajak" to detail.masaPajak
+                ),
+                waktuProses = "",
+                keterangan = detail.status,
+                isFiveYear = false,
+                isBlocked = false,
+                blockedDescription = "",
+                isCompany = false,
+                canBePaid = true,
+                infoTransaksi = InfoTransaksi(
+                    kendaraanMilik = detail.milikKeTahun,
+                    waktuTransaksi = "",
+                    waktuKadaluarsa = "",
+                    durasiKadaluarsa = 0,
+                    waktuTunggu = "",
+                    durasiTunggu = 0,
+                    waktuTungguPembayaran = "",
+                    durasiTungguPembayaran = 0,
+                    expiredVerificationTime = null,
+                    kodeBayar = "",
+                    nominalPembayaran = totalValue,
+                    status = "success",
+                    ableToPaymentChecking = true,
+                    institution = "SAMSAT BALI",
+                    institutionGateway = "SAMSAT BALI"
+                ),
+                isCutOff = false,
+                availablePaymentMethods = AvailablePaymentMethods(
+                    kodeBayar = false,
+                    qris = true,
+                    va = true,
+                    finpay = false
+                ),
+                masaPajak = MasaPajak(
+                    tanggalJatuhTempoSebelumnya = tanggalPajak,
+                    tanggalBerlakuSampai = tanggalStnk
+                )
+            )
+        )
+    } else {
+        JabarPajakResponse(
+            status = false,
+            message = baliResponse.message ?: "Data tidak ditemukan",
+            code = "400",
             data = null
         )
     }
