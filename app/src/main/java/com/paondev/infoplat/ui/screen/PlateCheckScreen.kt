@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.paondev.infoplat.data.api.BantenPajakResponse
 import com.paondev.infoplat.data.api.BaliPajakResponse
+import com.paondev.infoplat.data.api.OcrResponse
 import com.paondev.infoplat.data.api.DiypPajakData
 import com.paondev.infoplat.data.api.DiypPajakResponse
 import com.paondev.infoplat.data.api.JabarPajakData
@@ -127,16 +128,71 @@ fun PlateCheckScreen(
                 onClearError = { 
                     errorMessage = null
                     viewModel.clearCaptchaError()
+                    viewModel.clearCaptchaData()
                 },
                 onCheckClick = {
                     when (selectedProvince?.kode) {
                         "JTM" -> {
-                            // Jatim: First generate captcha
+                            // Jatim: Generate captcha and try OCR first (don't show captcha to user yet)
                             if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() && noRangka.length == 5) {
                                 isLoading = true
                                 coroutineScope.launch {
-                                    viewModel.getJatimCaptcha()
-                                    isLoading = false
+                                    // Step 1: Get captcha (but don't update viewModel.captchaData yet)
+                                    // We need to call getJatimCaptcha directly from repository to avoid updating the state
+                                    val captchaResult = viewModel.getJatimCaptcha()
+                                    
+                                    // Clear the captcha data from viewModel to prevent UI from showing it
+                                    viewModel.clearCaptchaData()
+                                    
+                                    if (captchaResult.isSuccess && captchaResult.getOrNull()?.image != null) {
+                                        val captchaResponse = captchaResult.getOrNull()!!
+                                        val image = captchaResponse.image
+                                        
+                                        // Step 2: Try OCR with the captcha image
+                                        val ocrResult = viewModel.solveOcr(image)
+                                        
+                                        if (ocrResult.isSuccess && ocrResult.getOrNull()?.success == true) {
+                                            // OCR Success: Remove spaces and verify
+                                            val ocrText = ocrResult.getOrNull()?.data?.replace(" ", "") ?: ""
+                                            
+                                            isLoading = false
+                                            
+                                            // Verify with OCR result
+                                            val nopol = "$headPlat$bodyPlat$tailPlat".lowercase()
+                                            val verifyResult = viewModel.getJatimVehicleInfo(
+                                                sessionId = captchaResponse.sessionId,
+                                                captchaCode = ocrText,
+                                                nopol = nopol,
+                                                norang = noRangka
+                                            )
+                                            
+                                            verifyResult.onSuccess { response ->
+                                                if (response.status == "success") {
+                                                    // Convert Jatim response to Jabar response format for navigation
+                                                    val jabarResponse = convertJatimToJabar(response)
+                                                    navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                                } else {
+                                                    // Verification failed even with OCR, now show captcha to user
+                                                    // Update viewModel with captcha data so UI shows it
+                                                    viewModel.setCaptchaData(captchaResponse)
+                                                    errorMessage = response.message ?: "Gagal memverifikasi captcha"
+                                                }
+                                            }.onFailure {
+                                                // Verification failed, show captcha to user
+                                                viewModel.setCaptchaData(captchaResponse)
+                                                errorMessage = it.message
+                                            }
+                                        } else {
+                                            // OCR Failed: Show captcha to user for manual input
+                                            isLoading = false
+                                            // Update viewModel with captcha data so UI shows it
+                                            viewModel.setCaptchaData(captchaResponse)
+                                            errorMessage = ocrResult.getOrNull()?.data ?: "OCR gagal, silakan input manual"
+                                        }
+                                    } else {
+                                        isLoading = false
+                                        errorMessage = "Gagal mendapatkan captcha"
+                                    }
                                 }
                             } else {
                                 errorMessage = if (noRangka.length != 5) {

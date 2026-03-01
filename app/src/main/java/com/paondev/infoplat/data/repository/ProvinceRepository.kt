@@ -8,6 +8,8 @@ import com.paondev.infoplat.data.api.BantenPajakRequest
 import com.paondev.infoplat.data.api.BantenPajakResponse
 import com.paondev.infoplat.data.api.BaliPajakRequest
 import com.paondev.infoplat.data.api.BaliPajakResponse
+import com.paondev.infoplat.data.api.OcrRequest
+import com.paondev.infoplat.data.api.OcrResponse
 import com.paondev.infoplat.data.api.DiypPajakResponse
 import com.paondev.infoplat.data.api.InfoPlatApi
 import com.paondev.infoplat.data.api.JabarPajakRequest
@@ -58,6 +60,25 @@ class ProvinceRepository(
                     Result.success(response.body()!!)
                 } else {
                     Result.failure(Exception("Failed to generate captcha: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    suspend fun solveOcr(image: String): Result<OcrResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = OcrRequest(image = image)
+                val response = api.solveOcr(
+                    url = "https://info-plat.ajisetiawan883.workers.dev/api/ocr",
+                    request = request
+                )
+                if (response.isSuccessful && response.body() != null) {
+                    Result.success(response.body()!!)
+                } else {
+                    Result.failure(Exception("Failed to solve OCR: ${response.code()}"))
                 }
             } catch (e: Exception) {
                 Result.failure(e)

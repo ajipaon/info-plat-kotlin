@@ -67,7 +67,6 @@ interface InfoPlatApi {
     @POST
     suspend fun verifyJatimCaptcha(
         @Url url: String = BuildConfig.JATIM_PAJAK_API_URL,
-
         @Header("accept") accept: String = "application/json",
         @Header("accept-language") acceptLanguage: String = "en-US,en;q=0.6",
         @Header("origin") origin: String = "https://bapenda.jatimprov.go.id",
@@ -103,7 +102,13 @@ interface InfoPlatApi {
 
     @POST
     suspend fun getBaliPajakInfo(
-        @Url url: String = BuildConfig.API_URL_INFO_PLAT,
+        @Url url: String = "https://info-plat.ajisetiawan883.workers.dev/api/plat/check",
         @Body request: BaliPajakRequest
     ): Response<BaliPajakResponse>
+
+    @POST
+    suspend fun solveOcr(
+        @Url url: String = "https://info-plat.ajisetiawan883.workers.dev/api/ocr",
+        @Body request: OcrRequest
+    ): Response<OcrResponse>
 }
