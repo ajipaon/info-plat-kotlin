@@ -26,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.paondev.infoplat.data.api.BantenPajakResponse
 import com.paondev.infoplat.data.api.BaliPajakResponse
 import com.paondev.infoplat.data.api.BangkaBelitungPajakResponse
+import com.paondev.infoplat.data.api.LampungPajakResponse
 import com.paondev.infoplat.data.api.OcrResponse
 import com.paondev.infoplat.data.api.DiypPajakData
 import com.paondev.infoplat.data.api.DiypPajakResponse
@@ -326,6 +327,35 @@ fun PlateCheckScreen(
                                 errorMessage = "Semua field harus diisi"
                             }
                         }
+                        "BDRLMP" -> {
+                            // Lampung: Direct check with no_rangka
+                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() && noRangka.length == 5) {
+                                isLoading = true
+                                coroutineScope.launch {
+                                    val result = viewModel.getLampungVehicleInfo(
+                                        provinceCode = "BDRLMP",
+                                        headPlat = headPlat,
+                                        bodyPlat = bodyPlat,
+                                        tailPlat = tailPlat,
+                                        noRangka = noRangka
+                                    )
+                                    isLoading = false
+                                    result.onSuccess { response ->
+                                        // Convert Lampung response to Jabar response format for navigation
+                                        val jabarResponse = convertLampungToJabar(response)
+                                        navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                    }.onFailure {
+                                        errorMessage = it.message
+                                    }
+                                }
+                            } else {
+                                errorMessage = if (noRangka.length != 5) {
+                                    "No Rangka harus terdiri dari 5 digit"
+                                } else {
+                                    "Semua field harus diisi"
+                                }
+                            }
+                        }
                         else -> {
                             errorMessage = "Provinsi ini belum didukung"
                         }
@@ -424,8 +454,9 @@ fun PlateCheckHeroSection(
 ) {
     val isJatim = selectedProvince?.kode == "JTM"
     val isBali = selectedProvince?.kode == "BALI"
+    val isLampung = selectedProvince?.kode == "BDRLMP"
     val showCaptcha = isJatim && captchaData != null
-    val showNoRangka = isJatim || isBali
+    val showNoRangka = isJatim || isBali || isLampung
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -1275,6 +1306,109 @@ fun convertBangkaBelitungToJabar(bangkaBelitungResponse: BangkaBelitungPajakResp
         JabarPajakResponse(
             status = false,
             message = bangkaBelitungResponse.message ?: "Data tidak ditemukan",
+            code = "400",
+            data = null
+        )
+    }
+}
+
+// Helper function to convert Lampung response to Jabar response format
+fun convertLampungToJabar(lampungResponse: LampungPajakResponse): JabarPajakResponse {
+    val data = lampungResponse.data
+    return if (lampungResponse.success && data != null) {
+        val totalValue = data.jumlahBayar.angka
+        
+        JabarPajakResponse(
+            status = true,
+            message = "Data ditemukan",
+            code = "200",
+            data = JabarPajakData(
+                namaMerk = data.merek,
+                jenis = data.jenisKendaraan,
+                tahunBuatan = data.tahun.toString(),
+                milikKe = "${data.kendaraanKe}",
+                namaModel = data.type,
+                warna = "-",
+                noPolisi = "BE${data.kendaraanKe}XX", // Will be replaced with actual plate number
+                infoPkbPnpb = InfoPkbPnpb(
+                    tanggalPajak = data.jatuhTempoPkb,
+                    tanggalStnk = data.stnkBerlakuSampai,
+                    wilayah = "LAMPUNG"
+                ),
+                infoPembayaran = InfoPembayaran(
+                    pkb = TaxDetail(
+                        pokok = data.pokokPkb.raw,
+                        denda = data.dendaPkb.raw
+                    ),
+                    opsen = TaxDetail(
+                        pokok = data.pokokOpsenPkb.raw,
+                        denda = data.dendaOpsenPkb.raw
+                    ),
+                    swdkllj = TaxDetail(
+                        pokok = data.pokokSwdkllj.raw,
+                        denda = data.dendaSwdkllj.raw
+                    ),
+                    pnpb = PnpbDetail(
+                        stnk = "100000",
+                        tnkb = "60000"
+                    ),
+                    jumlah = data.jumlahBayar.raw
+                ),
+                infoKendaraan = mapOf(
+                    "merk" to data.merek,
+                    "type" to data.type,
+                    "jenisKendaraan" to data.jenisKendaraan,
+                    "tahun" to data.tahun.toString(),
+                    "isiSilinder" to data.isiSilinder.toString(),
+                    "warnaTnkb" to data.warnaTnkb,
+                    "njkb" to data.njkb.raw,
+                    "bobot" to data.bobot.toString(),
+                    "dasarPkb" to data.dasarPkb.raw,
+                    "nilaiPajakPertahun" to data.nilaiPajakPertahun.raw,
+                    "keterlambatan" to data.keterlambatan,
+                    "catatan" to data.catatan
+                ) as Map<String, Any>,
+                waktuProses = data.tglBayarTerakhir,
+                keterangan = data.keterlambatan,
+                isFiveYear = false,
+                isBlocked = false,
+                blockedDescription = "",
+                isCompany = false,
+                canBePaid = true,
+                infoTransaksi = InfoTransaksi(
+                    kendaraanMilik = "${data.kendaraanDari}",
+                    waktuTransaksi = data.tglBayarTerakhir,
+                    waktuKadaluarsa = "",
+                    durasiKadaluarsa = 0,
+                    waktuTunggu = "",
+                    durasiTunggu = 0,
+                    waktuTungguPembayaran = "",
+                    durasiTungguPembayaran = 0,
+                    expiredVerificationTime = null,
+                    kodeBayar = "",
+                    nominalPembayaran = totalValue.toString(),
+                    status = "success",
+                    ableToPaymentChecking = true,
+                    institution = "SAMSAT LAMPUNG",
+                    institutionGateway = "SAMSAT LAMPUNG"
+                ),
+                isCutOff = false,
+                availablePaymentMethods = AvailablePaymentMethods(
+                    kodeBayar = false,
+                    qris = true,
+                    va = true,
+                    finpay = false
+                ),
+                masaPajak = MasaPajak(
+                    tanggalJatuhTempoSebelumnya = data.jatuhTempoPkb,
+                    tanggalBerlakuSampai = data.stnkBerlakuSampai
+                )
+            )
+        )
+    } else {
+        JabarPajakResponse(
+            status = false,
+            message = lampungResponse.message ?: "Data tidak ditemukan",
             code = "400",
             data = null
         )

@@ -7,6 +7,7 @@ import com.paondev.infoplat.data.allProvinces
 import com.paondev.infoplat.data.api.BantenPajakResponse
 import com.paondev.infoplat.data.api.BaliPajakResponse
 import com.paondev.infoplat.data.api.BangkaBelitungPajakResponse
+import com.paondev.infoplat.data.api.LampungPajakResponse
 import com.paondev.infoplat.data.api.OcrResponse
 import com.paondev.infoplat.data.api.DiypPajakResponse
 import com.paondev.infoplat.data.api.JabarPajakResponse
@@ -183,6 +184,22 @@ class ProvinceViewModel @Inject constructor(
             headPlat = headPlat,
             bodyPlat = bodyPlat,
             tailPlat = tailPlat
+        )
+    }
+
+    suspend fun getLampungVehicleInfo(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String,
+        noRangka: String
+    ): Result<LampungPajakResponse> {
+        return repository.getLampungVehicleInfo(
+            provinceCode = provinceCode,
+            headPlat = headPlat,
+            bodyPlat = bodyPlat,
+            tailPlat = tailPlat,
+            noRangka = noRangka
         )
     }
 
