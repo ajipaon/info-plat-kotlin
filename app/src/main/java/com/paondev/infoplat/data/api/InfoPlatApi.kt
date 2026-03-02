@@ -107,6 +107,12 @@ interface InfoPlatApi {
     ): Response<BaliPajakResponse>
 
     @POST
+    suspend fun getBangkaBelitungPajakInfo(
+        @Url url: String = "https://info-plat.ajisetiawan883.workers.dev/api/plat/check",
+        @Body request: BangkaBelitungPajakRequest
+    ): Response<BangkaBelitungPajakResponse>
+
+    @POST
     suspend fun solveOcr(
         @Url url: String = "https://info-plat.ajisetiawan883.workers.dev/api/ocr",
         @Body request: OcrRequest

@@ -8,6 +8,8 @@ import com.paondev.infoplat.data.api.BantenPajakRequest
 import com.paondev.infoplat.data.api.BantenPajakResponse
 import com.paondev.infoplat.data.api.BaliPajakRequest
 import com.paondev.infoplat.data.api.BaliPajakResponse
+import com.paondev.infoplat.data.api.BangkaBelitungPajakRequest
+import com.paondev.infoplat.data.api.BangkaBelitungPajakResponse
 import com.paondev.infoplat.data.api.OcrRequest
 import com.paondev.infoplat.data.api.OcrResponse
 import com.paondev.infoplat.data.api.DiypPajakResponse
@@ -311,6 +313,56 @@ class ProvinceRepository(
                     }
                 } else {
                     Result.failure(Exception("Province code is not BALI"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    suspend fun getBangkaBelitungVehicleInfo(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String
+    ): Result<BangkaBelitungPajakResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                if (provinceCode == "BNKLU") {
+                    val noPolisi = "$headPlat $bodyPlat $tailPlat".trim()
+                    val request = BangkaBelitungPajakRequest(
+                        kode = "BNKLU",
+                        headPlat = headPlat.uppercase(Locale.ROOT),
+                        bodyPlat = bodyPlat,
+                        tailPlat = tailPlat.uppercase(Locale.ROOT),
+                        noRangka = null
+                    )
+                    val response = api.getBangkaBelitungPajakInfo(
+                        url = BuildConfig.API_URL_INFO_PLAT,
+                        request = request
+                    )
+                    if (response.isSuccessful && response.body() != null) {
+                        val responseBody = response.body()!!
+                        
+                        // Save to history if data is found (success true with data)
+                        if (responseBody.success && responseBody.data != null) {
+                            val gson = Gson()
+                            val jsonData = gson.toJson(responseBody)
+                            val history = History(
+                                code = noPolisi.uppercase(),
+                                requestDate = Date(),
+                                region = "BNKLU",
+                                data = jsonData
+                            )
+                            dao.insertHistory(history)
+                        }
+                        
+                        Result.success(responseBody)
+                    } else {
+                        Result.failure(Exception("Failed to get vehicle info: ${response.code()}"))
+                    }
+                } else {
+                    Result.failure(Exception("Province code is not BNKLU"))
                 }
             } catch (e: Exception) {
                 Result.failure(e)

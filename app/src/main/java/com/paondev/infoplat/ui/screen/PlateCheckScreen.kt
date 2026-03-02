@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.paondev.infoplat.data.api.BantenPajakResponse
 import com.paondev.infoplat.data.api.BaliPajakResponse
+import com.paondev.infoplat.data.api.BangkaBelitungPajakResponse
 import com.paondev.infoplat.data.api.OcrResponse
 import com.paondev.infoplat.data.api.DiypPajakData
 import com.paondev.infoplat.data.api.DiypPajakResponse
@@ -274,7 +275,7 @@ fun PlateCheckScreen(
                         }
                         "BALI" -> {
                             // Bali: Direct check with no_rangka
-                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() && noRangka.length == 5) {
+                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() && noRangka.length ==5) {
                                 isLoading = true
                                 coroutineScope.launch {
                                     val result = viewModel.getBaliVehicleInfo(
@@ -299,6 +300,30 @@ fun PlateCheckScreen(
                                 } else {
                                     "Semua field harus diisi"
                                 }
+                            }
+                        }
+                        "BNKLU" -> {
+                            // Bangka Belitung: Direct check
+                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty()) {
+                                isLoading = true
+                                coroutineScope.launch {
+                                    val result = viewModel.getBangkaBelitungVehicleInfo(
+                                        provinceCode = "BNKLU",
+                                        headPlat = headPlat,
+                                        bodyPlat = bodyPlat,
+                                        tailPlat = tailPlat
+                                    )
+                                    isLoading = false
+                                    result.onSuccess { response ->
+                                        // Convert Bangka Belitung response to Jabar response format for navigation
+                                        val jabarResponse = convertBangkaBelitungToJabar(response)
+                                        navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                    }.onFailure {
+                                        errorMessage = it.message
+                                    }
+                                }
+                            } else {
+                                errorMessage = "Semua field harus diisi"
                             }
                         }
                         else -> {
@@ -1161,6 +1186,95 @@ fun convertBaliToJabar(baliResponse: BaliPajakResponse): JabarPajakResponse {
         JabarPajakResponse(
             status = false,
             message = baliResponse.message ?: "Data tidak ditemukan",
+            code = "400",
+            data = null
+        )
+    }
+}
+
+// Helper function to convert Bangka Belitung response to Jabar response format
+fun convertBangkaBelitungToJabar(bangkaBelitungResponse: BangkaBelitungPajakResponse): JabarPajakResponse {
+    val data = bangkaBelitungResponse.data
+    return if (bangkaBelitungResponse.success && data != null) {
+        val totalValue = data.jumlahTotal
+        
+        JabarPajakResponse(
+            status = true,
+            message = "Data ditemukan",
+            code = "200",
+            data = JabarPajakData(
+                namaMerk = data.merek,
+                jenis = "Kendaraan",
+                tahunBuatan = data.thBuatan,
+                milikKe = "1",
+                namaModel = data.model,
+                warna = data.warna,
+                noPolisi = data.nopol.trim(),
+                infoPkbPnpb = InfoPkbPnpb(
+                    tanggalPajak = data.akhirPkb,
+                    tanggalStnk = data.akhirStnkb,
+                    wilayah = "BANGKA BELITUNG"
+                ),
+                infoPembayaran = InfoPembayaran(
+                    pkb = TaxDetail(pokok = data.beaPkb, denda = data.dendaBeaPkb),
+                    opsen = TaxDetail(pokok = data.opsenPkb, denda = data.dendaOpsenPkb),
+                    swdkllj = TaxDetail(pokok = data.pokokSw, denda = data.totalDendaSw),
+                    pnpb = PnpbDetail(stnk = data.pnbpStnk, tnkb = data.pnbpPlat),
+                    jumlah = data.jumlahTotal
+                ),
+                infoKendaraan = mapOf(
+                    "merk" to data.merek,
+                    "model" to data.model,
+                    "tahun" to data.thBuatan,
+                    "warna" to data.warna,
+                    "warnaPlat" to data.warnaPlat,
+                    "jumlahCc" to data.jumlahCc,
+                    "bbm" to data.bbm,
+                    "noRangka" to data.noRangka,
+                    "noMesin" to data.noMesin,
+                    "nama" to data.nama
+                ),
+                waktuProses = "",
+                keterangan = "Data ditemukan",
+                isFiveYear = false,
+                isBlocked = false,
+                blockedDescription = "",
+                isCompany = false,
+                canBePaid = true,
+                infoTransaksi = InfoTransaksi(
+                    kendaraanMilik = "1",
+                    waktuTransaksi = "",
+                    waktuKadaluarsa = "",
+                    durasiKadaluarsa = 0,
+                    waktuTunggu = "",
+                    durasiTunggu = 0,
+                    waktuTungguPembayaran = "",
+                    durasiTungguPembayaran = 0,
+                    expiredVerificationTime = null,
+                    kodeBayar = "",
+                    nominalPembayaran = totalValue,
+                    status = "success",
+                    ableToPaymentChecking = true,
+                    institution = "SAMSAT BANGKA BELITUNG",
+                    institutionGateway = "SAMSAT BANGKA BELITUNG"
+                ),
+                isCutOff = false,
+                availablePaymentMethods = AvailablePaymentMethods(
+                    kodeBayar = false,
+                    qris = true,
+                    va = true,
+                    finpay = false
+                ),
+                masaPajak = MasaPajak(
+                    tanggalJatuhTempoSebelumnya = data.akhirPkb,
+                    tanggalBerlakuSampai = data.akhirStnkb
+                )
+            )
+        )
+    } else {
+        JabarPajakResponse(
+            status = false,
+            message = bangkaBelitungResponse.message ?: "Data tidak ditemukan",
             code = "400",
             data = null
         )
