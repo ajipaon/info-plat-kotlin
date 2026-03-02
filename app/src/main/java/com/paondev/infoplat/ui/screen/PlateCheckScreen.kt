@@ -27,6 +27,7 @@ import com.paondev.infoplat.data.api.BantenPajakResponse
 import com.paondev.infoplat.data.api.BaliPajakResponse
 import com.paondev.infoplat.data.api.BangkaBelitungPajakResponse
 import com.paondev.infoplat.data.api.LampungPajakResponse
+import com.paondev.infoplat.data.api.RiauPajakResponse
 import com.paondev.infoplat.data.api.OcrResponse
 import com.paondev.infoplat.data.api.DiypPajakData
 import com.paondev.infoplat.data.api.DiypPajakResponse
@@ -356,6 +357,35 @@ fun PlateCheckScreen(
                                 }
                             }
                         }
+                        "RIAU" -> {
+                            // Riau: Direct check with no_rangka
+                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() && noRangka.length == 5) {
+                                isLoading = true
+                                coroutineScope.launch {
+                                    val result = viewModel.getRiauVehicleInfo(
+                                        provinceCode = "RIAU",
+                                        headPlat = headPlat,
+                                        bodyPlat = bodyPlat,
+                                        tailPlat = tailPlat,
+                                        noRangka = noRangka
+                                    )
+                                    isLoading = false
+                                    result.onSuccess { response ->
+                                        // Convert Riau response to Jabar response format for navigation
+                                        val jabarResponse = convertRiauToJabar(response)
+                                        navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                    }.onFailure {
+                                        errorMessage = it.message
+                                    }
+                                }
+                            } else {
+                                errorMessage = if (noRangka.length != 5) {
+                                    "No Rangka harus terdiri dari 5 digit"
+                                } else {
+                                    "Semua field harus diisi"
+                                }
+                            }
+                        }
                         else -> {
                             errorMessage = "Provinsi ini belum didukung"
                         }
@@ -455,8 +485,9 @@ fun PlateCheckHeroSection(
     val isJatim = selectedProvince?.kode == "JTM"
     val isBali = selectedProvince?.kode == "BALI"
     val isLampung = selectedProvince?.kode == "BDRLMP"
+    val isRiau = selectedProvince?.kode == "RIAU"
     val showCaptcha = isJatim && captchaData != null
-    val showNoRangka = isJatim || isBali || isLampung
+    val showNoRangka = isJatim || isBali || isLampung || isRiau
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -1409,6 +1440,126 @@ fun convertLampungToJabar(lampungResponse: LampungPajakResponse): JabarPajakResp
         JabarPajakResponse(
             status = false,
             message = lampungResponse.message ?: "Data tidak ditemukan",
+            code = "400",
+            data = null
+        )
+    }
+}
+
+// Helper function to convert Riau response to Jabar response format
+fun convertRiauToJabar(riauResponse: RiauPajakResponse): JabarPajakResponse {
+    val data = riauResponse.data
+    return if (riauResponse.success && data != null) {
+        val totalValue = data.totalPajakKendaraan
+        
+        JabarPajakResponse(
+            status = true,
+            message = "Data ditemukan",
+            code = "200",
+            data = JabarPajakData(
+                namaMerk = data.merekKendaraan,
+                jenis = data.namaJenis,
+                tahunBuatan = data.tahunPembuatan,
+                milikKe = "1",
+                namaModel = data.namaModel,
+                warna = data.warnaKendaraan,
+                noPolisi = data.nopol,
+                infoPkbPnpb = InfoPkbPnpb(
+                    tanggalPajak = data.tanggalJatuhTempo,
+                    tanggalStnk = data.tanggalStnk,
+                    wilayah = "RIAU"
+                ),
+                infoPembayaran = InfoPembayaran(
+                    pkb = TaxDetail(
+                        pokok = data.totalPokokPkb,
+                        denda = data.totalDendaPkb
+                    ),
+                    opsen = TaxDetail(
+                        pokok = data.totalPokokPkbOpsen,
+                        denda = data.totalDendaPkbOpsen
+                    ),
+                    swdkllj = TaxDetail(
+                        pokok = data.totalPokokSwdk,
+                        denda = data.totalDendaSwdk
+                    ),
+                    pnpb = PnpbDetail(stnk = data.stnk, tnkb = data.tnkb),
+                    jumlah = data.totalPajakKendaraan
+                ),
+                infoKendaraan = mapOf(
+                    "nopol" to data.nopol,
+                    "namaPemilik" to data.namaPemilik,
+                    "alamat" to data.alamat,
+                    "merekKendaraan" to data.merekKendaraan,
+                    "typeKendaraan" to data.typeKendaraan,
+                    "golonganKendaraan" to data.golonganKendaraan,
+                    "tahunPembuatan" to data.tahunPembuatan,
+                    "warnaKendaraan" to data.warnaKendaraan,
+                    "namaModel" to data.namaModel,
+                    "namaJenis" to data.namaJenis,
+                    "warnaTnkb" to data.warnaTnkb,
+                    "njkb" to data.njkb,
+                    "bobot" to data.bobot,
+                    "dasarPkb" to data.dasarPkb,
+                    "lamaTunggakan" to data.lamaTunggakan,
+                    "totalPajakKendaraan" to data.totalPajakKendaraan,
+                    "pembayaranSebelumnya" to mapOf(
+                        "pokokBbnkb" to data.pokokBbnkbSebelumnya,
+                        "pokokBbnkbOpsen" to data.pokokBbnkbOpsenSebelumnya,
+                        "dendaBbnkb" to data.dendaBbnkbSebelumnya,
+                        "dendaBbnkbOpsen" to data.dendaBbnkbOpsenSebelumnya,
+                        "pokokPkb" to data.pokokPkbSebelumnya,
+                        "pokokPkbOpsen" to data.pokokPkbOpsenSebelumnya,
+                        "dendaPkb" to data.dendaPkbSebelumnya,
+                        "dendaPkbOpsen" to data.dendaPkbOpsenSebelumnya,
+                        "pokokSwdk" to data.pokokSwdkSebelumnya,
+                        "dendaSwdk" to data.dendaSwdkSebelumnya,
+                        "stnk" to data.stnkSebelumnya,
+                        "tnkb" to data.tnkbSebelumnya,
+                        "total" to data.totalSebelumnya,
+                        "tanggalPembayaran" to data.tanggalPembayaranSebelumnya
+                    )
+                ),
+                waktuProses = data.tanggalPembayaranSebelumnya,
+                keterangan = data.lamaTunggakan,
+                isFiveYear = false,
+                isBlocked = false,
+                blockedDescription = "",
+                isCompany = false,
+                canBePaid = true,
+                infoTransaksi = InfoTransaksi(
+                    kendaraanMilik = "1",
+                    waktuTransaksi = data.tanggalPembayaranSebelumnya,
+                    waktuKadaluarsa = "",
+                    durasiKadaluarsa = 0,
+                    waktuTunggu = "",
+                    durasiTunggu = 0,
+                    waktuTungguPembayaran = "",
+                    durasiTungguPembayaran = 0,
+                    expiredVerificationTime = null,
+                    kodeBayar = "",
+                    nominalPembayaran = totalValue,
+                    status = "success",
+                    ableToPaymentChecking = true,
+                    institution = "SAMSAT RIAU",
+                    institutionGateway = "SAMSAT RIAU"
+                ),
+                isCutOff = false,
+                availablePaymentMethods = AvailablePaymentMethods(
+                    kodeBayar = false,
+                    qris = true,
+                    va = true,
+                    finpay = false
+                ),
+                masaPajak = MasaPajak(
+                    tanggalJatuhTempoSebelumnya = data.tanggalJatuhTempo,
+                    tanggalBerlakuSampai = data.tanggalStnk
+                )
+            )
+        )
+    } else {
+        JabarPajakResponse(
+            status = false,
+            message = riauResponse.message ?: "Data tidak ditemukan",
             code = "400",
             data = null
         )
