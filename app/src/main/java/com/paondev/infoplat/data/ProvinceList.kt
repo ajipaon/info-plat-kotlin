@@ -10,7 +10,7 @@ val allProvinces = listOf(
     Province(
         kode = "DKI",
         name = "DKI Jakarta",
-        isActive = true
+        isActive = false
     ),
     Province(
         kode = "JBR",
@@ -20,7 +20,7 @@ val allProvinces = listOf(
     Province(
         kode = "JTG",
         name = "Jawa Tengah",
-        isActive = true
+        isActive = false
     ),
     Province(
         kode = "JTM",
@@ -31,7 +31,6 @@ val allProvinces = listOf(
         kode = "BAL",
         name = "Bali",
         isActive = true
-
     ),
     Province(
         kode = "BTN",
@@ -41,7 +40,7 @@ val allProvinces = listOf(
     Province(
         kode = "SUMUT",
         name = "Sumatera Utara",
-        isActive = true
+        isActive = false
     ),
     Province(
         kode = "SUMBAR",
@@ -51,11 +50,11 @@ val allProvinces = listOf(
     Province(
         kode = "SULSEL",
         name = "Sulawesi Selatan",
-        isActive = true
+        isActive = false
     ),
     Province(
         kode = "KALBAR",
         name = "Kalimantan Barat",
-        isActive = true
+        isActive = false
     )
 )

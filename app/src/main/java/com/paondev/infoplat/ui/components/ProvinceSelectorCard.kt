@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -165,6 +166,7 @@ fun ProvincePickerSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(max = 600.dp)
             .padding(bottom = 32.dp)
     ) {
         // Header
@@ -245,17 +247,30 @@ fun ProvincePickerSheet(
             else -> {
                 // Province List
                 LazyColumn(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
                 ) {
                     items(provinces) { province ->
                         val isSelected = province.kode == selectedProvince.kode
+                        val isDisabled = !province.isActive
+                        
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onSelect(province) }
+                                .then(
+                                    if (isDisabled) {
+                                        Modifier
+                                    } else {
+                                        Modifier.clickable { onSelect(province) }
+                                    }
+                                )
                                 .background(
-                                    if (isSelected) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.07f)
-                                    else Color.Transparent
+                                    when {
+                                        isSelected -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.07f)
+                                        isDisabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.03f)
+                                        else -> Color.Transparent
+                                    }
                                 )
                                 .padding(horizontal = 20.dp, vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -263,10 +278,11 @@ fun ProvincePickerSheet(
                             // Kode badge
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = if (isSelected)
-                                    MaterialTheme.colorScheme.tertiary
-                                else
-                                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f)
+                                color = when {
+                                    isSelected -> MaterialTheme.colorScheme.tertiary
+                                    isDisabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                                    else -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f)
+                                }
                             ) {
                                 Text(
                                     text = province.kode,
@@ -275,10 +291,11 @@ fun ProvincePickerSheet(
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         fontFamily = FontFamily.Monospace,
-                                        color = if (isSelected)
-                                            MaterialTheme.colorScheme.onPrimary
-                                        else
-                                            MaterialTheme.colorScheme.tertiary
+                                        color = when {
+                                            isSelected -> MaterialTheme.colorScheme.onPrimary
+                                            isDisabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                            else -> MaterialTheme.colorScheme.tertiary
+                                        }
                                     )
                                 )
                             }
@@ -291,11 +308,23 @@ fun ProvincePickerSheet(
                                 style = TextStyle(
                                     fontSize = 15.sp,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = if (isDisabled) 
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                    else 
+                                        MaterialTheme.colorScheme.onSurface
                                 )
                             )
 
-                            if (isSelected) {
+                            if (isDisabled) {
+                                Text(
+                                    text = "Coming Soon",
+                                    style = TextStyle(
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                    )
+                                )
+                            } else if (isSelected) {
                                 Icon(
                                     imageVector = Icons.Default.CheckCircle,
                                     contentDescription = null,
