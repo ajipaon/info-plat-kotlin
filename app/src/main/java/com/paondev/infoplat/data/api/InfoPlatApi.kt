@@ -125,6 +125,12 @@ interface InfoPlatApi {
     ): Response<RiauPajakResponse>
 
     @POST
+    suspend fun getSumbarPajakInfo(
+        @Url url: String = "https://info-plat.ajisetiawan883.workers.dev/api/plat/check",
+        @Body request: SumbarPajakRequest
+    ): Response<SumbarPajakResponse>
+
+    @POST
     suspend fun solveOcr(
         @Url url: String = "https://info-plat.ajisetiawan883.workers.dev/api/ocr",
         @Body request: OcrRequest

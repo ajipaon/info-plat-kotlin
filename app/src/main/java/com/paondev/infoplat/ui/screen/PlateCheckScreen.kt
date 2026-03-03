@@ -28,6 +28,7 @@ import com.paondev.infoplat.data.api.BaliPajakResponse
 import com.paondev.infoplat.data.api.BangkaBelitungPajakResponse
 import com.paondev.infoplat.data.api.LampungPajakResponse
 import com.paondev.infoplat.data.api.RiauPajakResponse
+import com.paondev.infoplat.data.api.SumbarPajakResponse
 import com.paondev.infoplat.data.api.OcrResponse
 import com.paondev.infoplat.data.api.DiypPajakData
 import com.paondev.infoplat.data.api.DiypPajakResponse
@@ -386,6 +387,35 @@ fun PlateCheckScreen(
                                 }
                             }
                         }
+                        "SUMBAR" -> {
+                            // Sumatra Barat: Direct check with no_rangka
+                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() && noRangka.length == 5) {
+                                isLoading = true
+                                coroutineScope.launch {
+                                    val result = viewModel.getSumbarVehicleInfo(
+                                        provinceCode = "SUMBAR",
+                                        headPlat = headPlat,
+                                        bodyPlat = bodyPlat,
+                                        tailPlat = tailPlat,
+                                        noRangka = noRangka
+                                    )
+                                    isLoading = false
+                                    result.onSuccess { response ->
+                                        // Convert Sumbar response to Jabar response format for navigation
+                                        val jabarResponse = convertSumbarToJabar(response)
+                                        navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                    }.onFailure {
+                                        errorMessage = it.message
+                                    }
+                                }
+                            } else {
+                                errorMessage = if (noRangka.length != 5) {
+                                    "No Rangka harus terdiri dari 5 digit"
+                                } else {
+                                    "Semua field harus diisi"
+                                }
+                            }
+                        }
                         else -> {
                             errorMessage = "Provinsi ini belum didukung"
                         }
@@ -486,8 +516,9 @@ fun PlateCheckHeroSection(
     val isBali = selectedProvince?.kode == "BALI"
     val isLampung = selectedProvince?.kode == "BDRLMP"
     val isRiau = selectedProvince?.kode == "RIAU"
+    val isSumbar = selectedProvince?.kode == "SUMBAR"
     val showCaptcha = isJatim && captchaData != null
-    val showNoRangka = isJatim || isBali || isLampung || isRiau
+    val showNoRangka = isJatim || isBali || isLampung || isRiau || isSumbar
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -1440,6 +1471,92 @@ fun convertLampungToJabar(lampungResponse: LampungPajakResponse): JabarPajakResp
         JabarPajakResponse(
             status = false,
             message = lampungResponse.message ?: "Data tidak ditemukan",
+            code = "400",
+            data = null
+        )
+    }
+}
+
+// Helper function to convert Sumbar response to Jabar response format
+fun convertSumbarToJabar(sumbarResponse: SumbarPajakResponse): JabarPajakResponse {
+    val data = sumbarResponse.data
+    return if (sumbarResponse.success && data != null) {
+        val totalValue = data.jumlah
+        
+        JabarPajakResponse(
+            status = true,
+            message = "Data ditemukan",
+            code = "200",
+            data = JabarPajakData(
+                namaMerk = data.merek,
+                jenis = "Kendaraan",
+                tahunBuatan = data.tahun,
+                milikKe = "1",
+                namaModel = data.tipe,
+                warna = data.warna,
+                noPolisi = data.tnkb,
+                infoPkbPnpb = InfoPkbPnpb(
+                    tanggalPajak = data.tglPajak,
+                    tanggalStnk = data.tglStnk,
+                    wilayah = "SUMBAR"
+                ),
+                infoPembayaran = InfoPembayaran(
+                    pkb = TaxDetail(pokok = data.pkbPokok, denda = data.pkbDenda),
+                    opsen = TaxDetail(pokok = data.opsPkbPokok, denda = data.opsPkbDenda),
+                    swdkllj = TaxDetail(pokok = data.swdklljPokok, denda = data.swdklljDenda),
+                    pnpb = PnpbDetail(stnk = data.admStnk, tnkb = data.admTnkb),
+                    jumlah = data.jumlah
+                ),
+                infoKendaraan = mapOf(
+                    "tnkb" to data.tnkb,
+                    "merek" to data.merek,
+                    "tipe" to data.tipe,
+                    "tahun" to data.tahun,
+                    "warna" to data.warna,
+                    "statusBlokir" to data.statusBlokir,
+                    "keterangan" to data.keterangan
+                ),
+                waktuProses = "",
+                keterangan = data.keterangan,
+                isFiveYear = false,
+                isBlocked = data.statusBlokir != "-",
+                blockedDescription = if (data.statusBlokir != "-") "Kendaraan dalam status blokir" else "",
+                isCompany = false,
+                canBePaid = data.statusBlokir == "-",
+                infoTransaksi = InfoTransaksi(
+                    kendaraanMilik = "1",
+                    waktuTransaksi = "",
+                    waktuKadaluarsa = "",
+                    durasiKadaluarsa = 0,
+                    waktuTunggu = "",
+                    durasiTunggu = 0,
+                    waktuTungguPembayaran = "",
+                    durasiTungguPembayaran = 0,
+                    expiredVerificationTime = null,
+                    kodeBayar = "",
+                    nominalPembayaran = totalValue,
+                    status = "success",
+                    ableToPaymentChecking = data.statusBlokir == "-",
+                    institution = "SAMSAT SUMBAR",
+                    institutionGateway = "SAMSAT SUMBAR"
+                ),
+                isCutOff = false,
+                availablePaymentMethods = AvailablePaymentMethods(
+                    kodeBayar = false,
+                    qris = true,
+                    va = true,
+                    finpay = false
+                ),
+                masaPajak = MasaPajak(
+                    tanggalJatuhTempoSebelumnya = data.tglPajak,
+                    tanggalBerlakuSampai = data.tglStnk
+                )
+            )
+        )
+    } else {
+        JabarPajakResponse(
+            status = false,
+            message = sumbarResponse.message ?: "Data tidak ditemukan",
             code = "400",
             data = null
         )
