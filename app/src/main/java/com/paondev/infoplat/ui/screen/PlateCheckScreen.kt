@@ -135,292 +135,38 @@ fun PlateCheckScreen(
                     viewModel.clearCaptchaData()
                 },
                 onCheckClick = {
-                    when (selectedProvince?.kode) {
-                        "JTM" -> {
-                            // Jatim: Generate captcha and try OCR first (don't show captcha to user yet)
-                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() && noRangka.length == 5) {
-                                isLoading = true
-                                coroutineScope.launch {
-                                    // Step 1: Get captcha (but don't update viewModel.captchaData yet)
-                                    // We need to call getJatimCaptcha directly from repository to avoid updating the state
-                                    val captchaResult = viewModel.getJatimCaptcha()
-                                    
-                                    // Clear the captcha data from viewModel to prevent UI from showing it
-                                    viewModel.clearCaptchaData()
-                                    
-                                    if (captchaResult.isSuccess && captchaResult.getOrNull()?.image != null) {
-                                        val captchaResponse = captchaResult.getOrNull()!!
-                                        val image = captchaResponse.image
-                                        
-                                        // Step 2: Try OCR with the captcha image
-                                        val ocrResult = viewModel.solveOcr(image)
-                                        
-                                        if (ocrResult.isSuccess && ocrResult.getOrNull()?.success == true) {
-                                            // OCR Success: Remove spaces and verify
-                                            val ocrText = ocrResult.getOrNull()?.data?.replace(" ", "") ?: ""
-                                            
-                                            // Verify with OCR result
-                                            val nopol = "$headPlat$bodyPlat$tailPlat".lowercase()
-                                            val verifyResult = viewModel.getJatimVehicleInfo(
-                                                sessionId = captchaResponse.sessionId,
-                                                captchaCode = ocrText,
-                                                nopol = nopol,
-                                                norang = noRangka
-                                            )
-                                            
-                                            verifyResult.onSuccess { response ->
-                                                if (response.status == "success") {
-                                                    // Convert data here to avoid delay
-                                                    val convertedData = convertJatimToJabar(response)
-                                                    navController.navigate(VehicleDetailDestination.createRoute(convertedData))
-                                                } else {
-                                                    // Verification failed even with OCR, now show captcha to user
-                                                    // Update viewModel with captcha data so UI shows it
-                                                    viewModel.setCaptchaData(captchaResponse)
-                                                    errorMessage = response.message ?: "Gagal memverifikasi captcha"
-                                                }
-                                                isLoading = false
-                                            }.onFailure {
-                                                // Verification failed, show captcha to user
-                                                viewModel.setCaptchaData(captchaResponse)
-                                                errorMessage = it.message
-                                                isLoading = false
-                                            }
-                                        } else {
-                                            // OCR Failed: Show captcha to user for manual input
-                                            // Update viewModel with captcha data so UI shows it
-                                            viewModel.setCaptchaData(captchaResponse)
-                                            errorMessage = ocrResult.getOrNull()?.data ?: "OCR gagal, silakan input manual"
-                                            isLoading = false
-                                        }
-                                    } else {
-                                        isLoading = false
-                                        errorMessage = "Gagal mendapatkan captcha"
-                                    }
-                                }
-                            } else {
-                                errorMessage = if (noRangka.length != 5) {
-                                    "No Rangka harus terdiri dari 5 digit"
-                                } else {
-                                    "Semua field harus diisi"
-                                }
-                            }
-                        }
-                        "JBR" -> {
-                            // Jabar: Direct check (data already in Jabar format)
-                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty()) {
-                                isLoading = true
-                                coroutineScope.launch {
-                                    val result = viewModel.getVehicleInfo(
-                                        provinceCode = "JBR",
-                                        headPlat = headPlat,
-                                        bodyPlat = bodyPlat,
-                                        tailPlat = tailPlat
-                                    )
-                                    isLoading = false
-                                    result.onSuccess { response ->
-                                        // Data is already in Jabar format, pass directly
-                                        navController.navigate(VehicleDetailDestination.createRoute(response))
-                                    }.onFailure {
-                                        errorMessage = it.message
-                                    }
-                                }
-                            } else {
-                                errorMessage = "Semua field harus diisi"
-                            }
-                        }
-                        "DIY" -> {
-                            // DIY: Direct check
-                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty()) {
-                                isLoading = true
-                                coroutineScope.launch {
-                                    val result = viewModel.getDiypVehicleInfo(
-                                        provinceCode = "DIY",
-                                        headPlat = headPlat,
-                                        bodyPlat = bodyPlat,
-                                        tailPlat = tailPlat
-                                    )
-                                    isLoading = false
-                                    result.onSuccess { response ->
-                                        // Convert data here to avoid delay
-                                        val convertedData = convertDiypToJabar(response)
-                                        navController.navigate(VehicleDetailDestination.createRoute(convertedData))
-                                    }.onFailure {
-                                        errorMessage = it.message
-                                    }
-                                }
-                            } else {
-                                errorMessage = "Semua field harus diisi"
-                            }
-                        }
-                        "BNTN" -> {
-                            // Banten: Direct check
-                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty()) {
-                                isLoading = true
-                                coroutineScope.launch {
-                                    val result = viewModel.getBantenVehicleInfo(
-                                        provinceCode = "BNTN",
-                                        headPlat = headPlat,
-                                        bodyPlat = bodyPlat,
-                                        tailPlat = tailPlat
-                                    )
-                                    isLoading = false
-                                    result.onSuccess { response ->
-                                        // Convert data here to avoid delay
-                                        val convertedData = convertBantenToJabar(response)
-                                        navController.navigate(VehicleDetailDestination.createRoute(convertedData))
-                                    }.onFailure {
-                                        errorMessage = it.message
-                                    }
-                                }
-                            } else {
-                                errorMessage = "Semua field harus diisi"
-                            }
-                        }
-                        "BALI" -> {
-                            // Bali: Direct check with no_rangka
-                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() && noRangka.length ==5) {
-                                isLoading = true
-                                coroutineScope.launch {
-                                    val result = viewModel.getBaliVehicleInfo(
-                                        provinceCode = "BALI",
-                                        headPlat = headPlat,
-                                        bodyPlat = bodyPlat,
-                                        tailPlat = tailPlat,
-                                        noRangka = noRangka
-                                    )
-                                    isLoading = false
-                                    result.onSuccess { response ->
-                                        // Convert data here to avoid delay
-                                        val convertedData = convertBaliToJabar(response)
-                                        navController.navigate(VehicleDetailDestination.createRoute(convertedData))
-                                    }.onFailure {
-                                        errorMessage = it.message
-                                    }
-                                }
-                            } else {
-                                errorMessage = if (noRangka.length != 5) {
-                                    "No Rangka harus terdiri dari 5 digit"
-                                } else {
-                                    "Semua field harus diisi"
-                                }
-                            }
-                        }
-                        "BNKLU" -> {
-                            // Bangka Belitung: Direct check
-                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty()) {
-                                isLoading = true
-                                coroutineScope.launch {
-                                    val result = viewModel.getBangkaBelitungVehicleInfo(
-                                        provinceCode = "BNKLU",
-                                        headPlat = headPlat,
-                                        bodyPlat = bodyPlat,
-                                        tailPlat = tailPlat
-                                    )
-                                    isLoading = false
-                                    result.onSuccess { response ->
-                                        // Convert data here to avoid delay
-                                        val convertedData = convertBangkaBelitungToJabar(response)
-                                        navController.navigate(VehicleDetailDestination.createRoute(convertedData))
-                                    }.onFailure {
-                                        errorMessage = it.message
-                                    }
-                                }
-                            } else {
-                                errorMessage = "Semua field harus diisi"
-                            }
-                        }
-                        "BDRLMP" -> {
-                            // Lampung: Direct check with no_rangka
-                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() && noRangka.length == 5) {
-                                isLoading = true
-                                coroutineScope.launch {
-                                    val result = viewModel.getLampungVehicleInfo(
-                                        provinceCode = "BDRLMP",
-                                        headPlat = headPlat,
-                                        bodyPlat = bodyPlat,
-                                        tailPlat = tailPlat,
-                                        noRangka = noRangka
-                                    )
-                                    isLoading = false
-                                    result.onSuccess { response ->
-                                        // Convert data here to avoid delay
-                                        val convertedData = convertLampungToJabar(response)
-                                        navController.navigate(VehicleDetailDestination.createRoute(convertedData))
-                                    }.onFailure {
-                                        errorMessage = it.message
-                                    }
-                                }
-                            } else {
-                                errorMessage = if (noRangka.length != 5) {
-                                    "No Rangka harus terdiri dari 5 digit"
-                                } else {
-                                    "Semua field harus diisi"
-                                }
-                            }
-                        }
-                        "RIAU" -> {
-                            // Riau: Direct check with no_rangka
-                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() && noRangka.length == 5) {
-                                isLoading = true
-                                coroutineScope.launch {
-                                    val result = viewModel.getRiauVehicleInfo(
-                                        provinceCode = "RIAU",
-                                        headPlat = headPlat,
-                                        bodyPlat = bodyPlat,
-                                        tailPlat = tailPlat,
-                                        noRangka = noRangka
-                                    )
-                                    isLoading = false
-                                    result.onSuccess { response ->
-                                        // Convert data here to avoid delay
-                                        val convertedData = convertRiauToJabar(response)
-                                        navController.navigate(VehicleDetailDestination.createRoute(convertedData))
-                                    }.onFailure {
-                                        errorMessage = it.message
-                                    }
-                                }
-                            } else {
-                                errorMessage = if (noRangka.length != 5) {
-                                    "No Rangka harus terdiri dari 5 digit"
-                                } else {
-                                    "Semua field harus diisi"
-                                }
-                            }
-                        }
-                        "SUMBAR" -> {
-                            // Sumatra Barat: Direct check with no_rangka
-                            if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() && noRangka.length == 5) {
-                                isLoading = true
-                                coroutineScope.launch {
-                                    val result = viewModel.getSumbarVehicleInfo(
-                                        provinceCode = "SUMBAR",
-                                        headPlat = headPlat,
-                                        bodyPlat = bodyPlat,
-                                        tailPlat = tailPlat,
-                                        noRangka = noRangka
-                                    )
-                                    isLoading = false
-                                    result.onSuccess { response ->
-                                        // Convert data here to avoid delay
-                                        val convertedData = convertSumbarToJabar(response)
-                                        navController.navigate(VehicleDetailDestination.createRoute(convertedData))
-                                    }.onFailure {
-                                        errorMessage = it.message
-                                    }
-                                }
-                            } else {
-                                errorMessage = if (noRangka.length != 5) {
-                                    "No Rangka harus terdiri dari 5 digit"
-                                } else {
-                                    "Semua field harus diisi"
-                                }
-                            }
-                        }
-                        else -> {
-                            errorMessage = "Provinsi ini belum didukung"
-                        }
+                    // Navigate directly to VehicleDetail with plate parameters
+                    // Data fetching will be done in VehicleDetailViewModel
+                    val provinceCode = selectedProvince?.kode
+                    
+                    if (provinceCode == null) {
+                        errorMessage = "Silakan pilih provinsi terlebih dahulu"
+                        return@PlateCheckHeroSection
                     }
+                    
+                    if (headPlat.isEmpty() || bodyPlat.isEmpty() || tailPlat.isEmpty()) {
+                        errorMessage = "Semua field plat harus diisi"
+                        return@PlateCheckHeroSection
+                    }
+                    
+                    val isJatim = provinceCode == "JTM"
+                    val needsNoRangka = isJatim || provinceCode == "BALI" || provinceCode == "BDRLMP" || provinceCode == "RIAU" || provinceCode == "SUMBAR"
+                    
+                    if (needsNoRangka && noRangka.length != 5) {
+                        errorMessage = "No Rangka harus terdiri dari 5 digit"
+                        return@PlateCheckHeroSection
+                    }
+                    
+                    // Navigate to VehicleDetail with parameters
+                    navController.navigate(
+                        VehicleDetailDestination.createRoute(
+                            provinceCode = provinceCode,
+                            headPlat = headPlat,
+                            bodyPlat = bodyPlat,
+                            tailPlat = tailPlat,
+                            noRangka = noRangka
+                        )
+                    )
                 },
                 onVerifyCaptchaClick = {
                     if (captchaCode.isNotEmpty()) {
@@ -850,24 +596,6 @@ fun NoRangkaInput(
                 }
             }
         )
-    }
-}
-
-// Helper function to decode base64 image string to ImageBitmap
-fun decodeBase64ToImageBitmap(base64String: String): ImageBitmap? {
-    return try {
-        val dataUrlPrefix = "data:image/png;base64,"
-        val base64Data = if (base64String.startsWith(dataUrlPrefix)) {
-            base64String.substring(dataUrlPrefix.length)
-        } else {
-            base64String
-        }
-        
-        val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
-        val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-        bitmap?.asImageBitmap()
-    } catch (e: Exception) {
-        null
     }
 }
 

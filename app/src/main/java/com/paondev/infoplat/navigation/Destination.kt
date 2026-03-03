@@ -49,6 +49,22 @@ object VehicleDetailDestination: Destination {
         return "$route?$RAW_DATA_PARAM=$encodedData&$PROVINCE_PARAM=$provinceCode"
     }
     
+    // New route - accepts plate parameters to fetch data in VehicleDetailViewModel
+    fun createRoute(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String,
+        noRangka: String = ""
+    ): String {
+        return "$route" +
+                "?provinceCode=$provinceCode" +
+                "&headPlat=$headPlat" +
+                "&bodyPlat=$bodyPlat" +
+                "&tailPlat=$tailPlat" +
+                "&noRangka=$noRangka"
+    }
+    
     fun parseData(encodedData: String?): JabarPajakResponse? {
         return try {
             val decodedData = Uri.decode(encodedData)
@@ -67,4 +83,33 @@ object VehicleDetailDestination: Destination {
             Pair(null, null)
         }
     }
+    
+    // Parse plate parameters for new flow
+    fun parsePlateParameters(
+        provinceCode: String?,
+        headPlat: String?,
+        bodyPlat: String?,
+        tailPlat: String?,
+        noRangka: String?
+    ): PlateParameters? {
+        return if (provinceCode != null && headPlat != null && bodyPlat != null && tailPlat != null) {
+            PlateParameters(
+                provinceCode = provinceCode,
+                headPlat = headPlat,
+                bodyPlat = bodyPlat,
+                tailPlat = tailPlat,
+                noRangka = noRangka ?: ""
+            )
+        } else {
+            null
+        }
+    }
 }
+
+data class PlateParameters(
+    val provinceCode: String,
+    val headPlat: String,
+    val bodyPlat: String,
+    val tailPlat: String,
+    val noRangka: String
+)

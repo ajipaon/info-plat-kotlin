@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import com.google.gson.Gson
 import javax.inject.Inject
 import com.paondev.infoplat.data.api.*
+import com.paondev.infoplat.data.repository.ProvinceRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,29 +16,320 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @HiltViewModel
-class VehicleDetailViewModel @Inject constructor() : ViewModel() {
+class VehicleDetailViewModel @Inject constructor(
+    private val repository: ProvinceRepository
+) : ViewModel() {
     
     private val _uiState = MutableStateFlow<VehicleDetailUiState>(VehicleDetailUiState.Loading)
     val uiState: StateFlow<VehicleDetailUiState> = _uiState.asStateFlow()
     
-    fun loadVehicleData(rawData: String?, provinceCode: String?) {
-        if (rawData == null || provinceCode == null) {
-            _uiState.value = VehicleDetailUiState.Error("Data tidak valid")
-            return
-        }
+    fun fetchVehicleData(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String,
+        noRangka: String = ""
+    ) {
+        _uiState.value = VehicleDetailUiState.Loading
         
+        viewModelScope.launch {
+            when (provinceCode) {
+                "JTM" -> fetchJatimVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+                "JBR" -> fetchJabarVehicleData(provinceCode, headPlat, bodyPlat, tailPlat)
+                "DIY" -> fetchDiypVehicleData(provinceCode, headPlat, bodyPlat, tailPlat)
+                "BNTN" -> fetchBantenVehicleData(provinceCode, headPlat, bodyPlat, tailPlat)
+                "BALI" -> fetchBaliVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+                "BNKLU" -> fetchBangkaBelitungVehicleData(provinceCode, headPlat, bodyPlat, tailPlat)
+                "BDRLMP" -> fetchLampungVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+                "RIAU" -> fetchRiauVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+                "SUMBAR" -> fetchSumbarVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+                else -> {
+                    _uiState.value = VehicleDetailUiState.Error("Provinsi tidak didukung")
+                }
+            }
+        }
+    }
+    
+    private suspend fun fetchJatimVehicleData(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String,
+        noRangka: String
+    ) {
+        try {
+            // Get captcha
+            val captchaResult = repository.getJatimCaptcha()
+            if (captchaResult.isFailure) {
+                _uiState.value = VehicleDetailUiState.Error("Gagal mendapatkan captcha")
+                return
+            }
+            
+            val captchaResponse = captchaResult.getOrNull()!!
+            
+            // Try OCR
+            val ocrResult = repository.solveOcr(captchaResponse.image ?: "")
+            
+            if (ocrResult.isSuccess && ocrResult.getOrNull()?.success == true) {
+                // OCR success - verify directly
+                val ocrText = ocrResult.getOrNull()?.data?.replace(" ", "") ?: ""
+                val nopol = "$headPlat$bodyPlat$tailPlat".lowercase()
+                val verifyResult = repository.getJatimVehicleInfo(
+                    sessionId = captchaResponse.sessionId,
+                    captchaCode = ocrText,
+                    nopol = nopol,
+                    norang = noRangka
+                )
+                
+                if (verifyResult.isSuccess) {
+                    val jatimResponse = verifyResult.getOrNull()!!
+                    val convertedData = convertJatimToJabar(jatimResponse)
+                    if (convertedData.data != null) {
+                        _uiState.value = VehicleDetailUiState.Success(convertedData)
+                    } else {
+                        _uiState.value = VehicleDetailUiState.Error(convertedData.message ?: "Data kendaraan tidak ditemukan")
+                    }
+                } else {
+                    _uiState.value = VehicleDetailUiState.Error(verifyResult.exceptionOrNull()?.message ?: "Gagal memverifikasi captcha")
+                }
+            } else {
+                // OCR failed - need manual captcha input
+                _uiState.value = VehicleDetailUiState.NeedCaptcha(captchaResponse)
+            }
+        } catch (e: Exception) {
+            Log.e("VehicleDetailVM", "Error fetching Jatim data", e)
+            _uiState.value = VehicleDetailUiState.Error("Gagal memuat data kendaraan: ${e.message}")
+        }
+    }
+    
+    suspend fun verifyJatimCaptcha(
+        sessionId: String,
+        captchaCode: String,
+        nopol: String,
+        noRangka: String
+    ) {
         _uiState.value = VehicleDetailUiState.Loading
         
         viewModelScope.launch {
             try {
-                val result = withContext(Dispatchers.Default) {
-                    convertRawDataToJabarResponse(rawData, provinceCode)
+                val result = repository.getJatimVehicleInfo(
+                    sessionId = sessionId,
+                    captchaCode = captchaCode,
+                    nopol = nopol,
+                    norang = noRangka
+                )
+                
+                if (result.isSuccess) {
+                    val jatimResponse = result.getOrNull()!!
+                    val convertedData = convertJatimToJabar(jatimResponse)
+                    if (convertedData.data != null) {
+                        _uiState.value = VehicleDetailUiState.Success(convertedData)
+                    } else {
+                        _uiState.value = VehicleDetailUiState.Error(convertedData.message ?: "Data kendaraan tidak ditemukan")
+                    }
+                } else {
+                    _uiState.value = VehicleDetailUiState.Error(result.exceptionOrNull()?.message ?: "Gagal memverifikasi captcha")
                 }
-                _uiState.value = VehicleDetailUiState.Success(result)
             } catch (e: Exception) {
-                Log.e("VehicleDetailVM", "Error converting data", e)
-                _uiState.value = VehicleDetailUiState.Error("Gagal memuat data kendaraan")
+                Log.e("VehicleDetailVM", "Error verifying Jatim captcha", e)
+                _uiState.value = VehicleDetailUiState.Error("Gagal memverifikasi captcha: ${e.message}")
             }
+        }
+    }
+    
+    private suspend fun fetchJabarVehicleData(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String
+    ) {
+        try {
+            val result = repository.getVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat)
+            if (result.isSuccess) {
+                val response = result.getOrNull()!!
+                if (response.data != null) {
+                    _uiState.value = VehicleDetailUiState.Success(response)
+                } else {
+                    _uiState.value = VehicleDetailUiState.Error(response.message ?: "Data kendaraan tidak ditemukan")
+                }
+            } else {
+                _uiState.value = VehicleDetailUiState.Error(result.exceptionOrNull()?.message ?: "Gagal memuat data")
+            }
+        } catch (e: Exception) {
+            Log.e("VehicleDetailVM", "Error fetching Jabar data", e)
+            _uiState.value = VehicleDetailUiState.Error("Gagal memuat data kendaraan")
+        }
+    }
+    
+    private suspend fun fetchDiypVehicleData(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String
+    ) {
+        try {
+            val result = repository.getDiypVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat)
+            if (result.isSuccess) {
+                val convertedData = convertDiypToJabar(result.getOrNull()!!)
+                if (convertedData.data != null) {
+                    _uiState.value = VehicleDetailUiState.Success(convertedData)
+                } else {
+                    _uiState.value = VehicleDetailUiState.Error(convertedData.message ?: "Data kendaraan tidak ditemukan")
+                }
+            } else {
+                _uiState.value = VehicleDetailUiState.Error(result.exceptionOrNull()?.message ?: "Gagal memuat data")
+            }
+        } catch (e: Exception) {
+            Log.e("VehicleDetailVM", "Error fetching DIY data", e)
+            _uiState.value = VehicleDetailUiState.Error("Gagal memuat data kendaraan")
+        }
+    }
+    
+    private suspend fun fetchBantenVehicleData(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String
+    ) {
+        try {
+            val result = repository.getBantenVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat)
+            if (result.isSuccess) {
+                val convertedData = convertBantenToJabar(result.getOrNull()!!)
+                if (convertedData.data != null) {
+                    _uiState.value = VehicleDetailUiState.Success(convertedData)
+                } else {
+                    _uiState.value = VehicleDetailUiState.Error(convertedData.message ?: "Data kendaraan tidak ditemukan")
+                }
+            } else {
+                _uiState.value = VehicleDetailUiState.Error(result.exceptionOrNull()?.message ?: "Gagal memuat data")
+            }
+        } catch (e: Exception) {
+            Log.e("VehicleDetailVM", "Error fetching Banten data", e)
+            _uiState.value = VehicleDetailUiState.Error("Gagal memuat data kendaraan")
+        }
+    }
+    
+    private suspend fun fetchBaliVehicleData(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String,
+        noRangka: String
+    ) {
+        try {
+            val result = repository.getBaliVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+            if (result.isSuccess) {
+                val convertedData = convertBaliToJabar(result.getOrNull()!!)
+                if (convertedData.data != null) {
+                    _uiState.value = VehicleDetailUiState.Success(convertedData)
+                } else {
+                    _uiState.value = VehicleDetailUiState.Error(convertedData.message ?: "Data kendaraan tidak ditemukan")
+                }
+            } else {
+                _uiState.value = VehicleDetailUiState.Error(result.exceptionOrNull()?.message ?: "Gagal memuat data")
+            }
+        } catch (e: Exception) {
+            Log.e("VehicleDetailVM", "Error fetching Bali data", e)
+            _uiState.value = VehicleDetailUiState.Error("Gagal memuat data kendaraan")
+        }
+    }
+    
+    private suspend fun fetchBangkaBelitungVehicleData(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String
+    ) {
+        try {
+            val result = repository.getBangkaBelitungVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat)
+            if (result.isSuccess) {
+                val convertedData = convertBangkaBelitungToJabar(result.getOrNull()!!)
+                if (convertedData.data != null) {
+                    _uiState.value = VehicleDetailUiState.Success(convertedData)
+                } else {
+                    _uiState.value = VehicleDetailUiState.Error(convertedData.message ?: "Data kendaraan tidak ditemukan")
+                }
+            } else {
+                _uiState.value = VehicleDetailUiState.Error(result.exceptionOrNull()?.message ?: "Gagal memuat data")
+            }
+        } catch (e: Exception) {
+            Log.e("VehicleDetailVM", "Error fetching Bangka Belitung data", e)
+            _uiState.value = VehicleDetailUiState.Error("Gagal memuat data kendaraan")
+        }
+    }
+    
+    private suspend fun fetchLampungVehicleData(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String,
+        noRangka: String
+    ) {
+        try {
+            val result = repository.getLampungVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+            if (result.isSuccess) {
+                val convertedData = convertLampungToJabar(result.getOrNull()!!)
+                if (convertedData.data != null) {
+                    _uiState.value = VehicleDetailUiState.Success(convertedData)
+                } else {
+                    _uiState.value = VehicleDetailUiState.Error(convertedData.message ?: "Data kendaraan tidak ditemukan")
+                }
+            } else {
+                _uiState.value = VehicleDetailUiState.Error(result.exceptionOrNull()?.message ?: "Gagal memuat data")
+            }
+        } catch (e: Exception) {
+            Log.e("VehicleDetailVM", "Error fetching Lampung data", e)
+            _uiState.value = VehicleDetailUiState.Error("Gagal memuat data kendaraan")
+        }
+    }
+    
+    private suspend fun fetchRiauVehicleData(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String,
+        noRangka: String
+    ) {
+        try {
+            val result = repository.getRiauVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+            if (result.isSuccess) {
+                val convertedData = convertRiauToJabar(result.getOrNull()!!)
+                if (convertedData.data != null) {
+                    _uiState.value = VehicleDetailUiState.Success(convertedData)
+                } else {
+                    _uiState.value = VehicleDetailUiState.Error(convertedData.message ?: "Data kendaraan tidak ditemukan")
+                }
+            } else {
+                _uiState.value = VehicleDetailUiState.Error(result.exceptionOrNull()?.message ?: "Gagal memuat data")
+            }
+        } catch (e: Exception) {
+            Log.e("VehicleDetailVM", "Error fetching Riau data", e)
+            _uiState.value = VehicleDetailUiState.Error("Gagal memuat data kendaraan")
+        }
+    }
+    
+    private suspend fun fetchSumbarVehicleData(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String,
+        noRangka: String
+    ) {
+        try {
+            val result = repository.getSumbarVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+            if (result.isSuccess) {
+                val convertedData = convertSumbarToJabar(result.getOrNull()!!)
+                if (convertedData.data != null) {
+                    _uiState.value = VehicleDetailUiState.Success(convertedData)
+                } else {
+                    _uiState.value = VehicleDetailUiState.Error(convertedData.message ?: "Data kendaraan tidak ditemukan")
+                }
+            } else {
+                _uiState.value = VehicleDetailUiState.Error(result.exceptionOrNull()?.message ?: "Gagal memuat data")
+            }
+        } catch (e: Exception) {
+            Log.e("VehicleDetailVM", "Error fetching Sumbar data", e)
+            _uiState.value = VehicleDetailUiState.Error("Gagal memuat data kendaraan")
         }
     }
     
@@ -860,6 +1152,7 @@ class VehicleDetailViewModel @Inject constructor() : ViewModel() {
 
 sealed class VehicleDetailUiState {
     object Loading : VehicleDetailUiState()
+    data class NeedCaptcha(val captchaData: com.paondev.infoplat.data.api.JatimCaptchaResponse) : VehicleDetailUiState()
     data class Success(val data: JabarPajakResponse) : VehicleDetailUiState()
     data class Error(val message: String) : VehicleDetailUiState()
 }

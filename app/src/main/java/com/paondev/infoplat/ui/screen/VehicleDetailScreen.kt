@@ -44,6 +44,12 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.Currency
+import android.util.Base64
+import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
+import kotlinx.coroutines.launch
 
 // Helper function to format currency
 fun formatCurrency(amount: String): String {
@@ -70,54 +76,90 @@ fun VehicleDetailScreen(
     viewModel: VehicleDetailViewModel = hiltViewModel(),
     jabarPajakData: JabarPajakResponse? = null
 ) {
-    var vehicleData by remember { mutableStateOf<JabarPajakData?>(null) }
     val backStackEntry = navController.currentBackStackEntry
+    val uiState by viewModel.uiState.collectAsState()
     
-    // Parse pre-converted data from route parameters
+    // Parse parameters and fetch data
     LaunchedEffect(backStackEntry) {
-        if (jabarPajakData == null) {
-            val encodedData = backStackEntry?.arguments?.getString("data")
-            
-            if (encodedData != null) {
-                val decodedData = VehicleDetailDestination.parseData(encodedData)
-                vehicleData = decodedData?.data
-            }
-        } else {
-            vehicleData = jabarPajakData.data
+        // First, check if pre-converted data is provided (backward compatibility)
+        if (jabarPajakData != null) {
+            // Use pre-converted data directly
+            return@LaunchedEffect
+        }
+        
+        // Check if encoded data is provided (backward compatibility)
+        val encodedData = backStackEntry?.arguments?.getString("data")
+        if (encodedData != null) {
+            val decodedData = VehicleDetailDestination.parseData(encodedData)
+            return@LaunchedEffect
+        }
+        
+        // New flow: Parse plate parameters and fetch data
+        val plateParams = VehicleDetailDestination.parsePlateParameters(
+            provinceCode = backStackEntry?.arguments?.getString("provinceCode"),
+            headPlat = backStackEntry?.arguments?.getString("headPlat"),
+            bodyPlat = backStackEntry?.arguments?.getString("bodyPlat"),
+            tailPlat = backStackEntry?.arguments?.getString("tailPlat"),
+            noRangka = backStackEntry?.arguments?.getString("noRangka")
+        )
+        
+        if (plateParams != null) {
+            viewModel.fetchVehicleData(
+                provinceCode = plateParams.provinceCode,
+                headPlat = plateParams.headPlat,
+                bodyPlat = plateParams.bodyPlat,
+                tailPlat = plateParams.tailPlat,
+                noRangka = plateParams.noRangka
+            )
         }
     }
     
-    // Use pre-converted data directly
-    val data = vehicleData
-    
-    // No skeleton or error states needed since data is already converted
-    val showSkeleton = false
-    val errorMessage = null
+    // Use data from state
+    val vehicleData = when (val state = uiState) {
+        is VehicleDetailUiState.Success -> state.data.data
+        else -> null
+    }
     
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
-        if (showSkeleton) {
-            item {
-                VehicleDetailSkeleton()
+        when (uiState) {
+            is VehicleDetailUiState.Loading -> {
+                item {
+                    VehicleDetailSkeleton()
+                }
             }
-        } else if (errorMessage != null) {
-            item {
-                ErrorState(message = errorMessage)
+            is VehicleDetailUiState.NeedCaptcha -> {
+                item {
+                    CaptchaInputScreen(
+                        navController = navController,
+                        viewModel = viewModel,
+                        captchaData = (uiState as VehicleDetailUiState.NeedCaptcha).captchaData
+                    )
+                }
             }
-        } else {
-            item {
-                LicensePlateHeroDetail(vehicleData?.noPolisi, vehicleData?.infoPkbPnpb?.wilayah)
+            is VehicleDetailUiState.Error -> {
+                item {
+                    ErrorState(message = (uiState as VehicleDetailUiState.Error).message)
+                }
             }
+            is VehicleDetailUiState.Success -> {
+                val data = (uiState as VehicleDetailUiState.Success).data.data
+                if (data != null) {
+                    item {
+                        LicensePlateHeroDetail(data.noPolisi, data.infoPkbPnpb?.wilayah)
+                    }
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                VehicleSpecificationCard(vehicleData)
-            }
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        VehicleSpecificationCard(data)
+                    }
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                TaxStatusCard(vehicleData)
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        TaxStatusCard(data)
+                    }
+                }
             }
         }
 
@@ -617,6 +659,262 @@ fun TaxBreakdownItem(
     }
 }
 
+
+// Helper function to decode base64 image
+fun decodeBase64ToImageBitmap(base64String: String): androidx.compose.ui.graphics.ImageBitmap? {
+    return try {
+        val dataUrlPrefix = "data:image/png;base64,"
+        val base64Data = if (base64String.startsWith(dataUrlPrefix)) {
+            base64String.substring(dataUrlPrefix.length)
+        } else {
+            base64String
+        }
+        
+        val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
+        val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+        bitmap?.asImageBitmap()
+    } catch (e: Exception) {
+        null
+    }
+}
+
+@Composable
+fun CaptchaInputScreen(
+    navController: NavController,
+    viewModel: VehicleDetailViewModel,
+    captchaData: com.paondev.infoplat.data.api.JatimCaptchaResponse
+) {
+    var captchaCode by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val isLoading by viewModel.uiState.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+    
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "Verifikasi CAPTCHA",
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+                
+                Text(
+                    "Masukkan kode yang terlihat pada gambar",
+                    style = TextStyle(
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    ),
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // CAPTCHA Image
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.background
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val bitmap = decodeBase64ToImageBitmap(captchaData.image ?: "")
+                        if (bitmap != null) {
+                            androidx.compose.foundation.Image(
+                                bitmap = bitmap,
+                                contentDescription = "CAPTCHA",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                            )
+                        } else {
+                            Text(
+                                "Gagal memuat gambar CAPTCHA",
+                                color = MaterialTheme.colorScheme.error,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Captcha Input
+                Column {
+                    Text(
+                        "Kode CAPTCHA",
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = captchaCode,
+                        onValueChange = { 
+                            captchaCode = it.uppercase()
+                            errorMessage = null
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.background)
+                            .border(
+                                2.dp,
+                                if (errorMessage != null)
+                                    MaterialTheme.colorScheme.error
+                                else
+                                    MaterialTheme.colorScheme.tertiary,
+                                RoundedCornerShape(12.dp)
+                            )
+                            .padding(horizontal = 16.dp),
+                        textStyle = TextStyle(
+                            color = MaterialTheme.colorScheme.tertiary,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            letterSpacing = 2.sp
+                        ),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Characters
+                        ),
+                        // Wrap suspend function call in coroutine
+                        cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.tertiary),
+                        decorationBox = { innerTextField ->
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (captchaCode.isEmpty()) {
+                                    Text(
+                                        "Masukkan kode",
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                        fontSize = 16.sp
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        }
+                    )
+                }
+                
+                // Error message
+                if (errorMessage != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        errorMessage ?: "",
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Verify Button
+                Button(
+                    onClick = {
+                        if (captchaCode.isNotEmpty()) {
+                            // Get plate parameters from current navigation (we're in VehicleDetail screen)
+                            val backStackEntry = navController.currentBackStackEntry
+                            val plateParams = backStackEntry?.arguments?.let {
+                                com.paondev.infoplat.navigation.VehicleDetailDestination.parsePlateParameters(
+                                    provinceCode = it.getString("provinceCode"),
+                                    headPlat = it.getString("headPlat"),
+                                    bodyPlat = it.getString("bodyPlat"),
+                                    tailPlat = it.getString("tailPlat"),
+                                    noRangka = it.getString("noRangka")
+                                )
+                            }
+                            
+                            if (plateParams != null) {
+                                val nopol = "${plateParams.headPlat}${plateParams.bodyPlat}${plateParams.tailPlat}".lowercase()
+                                // Launch coroutine to call suspend function
+                                coroutineScope.launch {
+                                    viewModel.verifyJatimCaptcha(
+                                        sessionId = captchaData.sessionId,
+                                        captchaCode = captchaCode,
+                                        nopol = nopol,
+                                        noRangka = plateParams.noRangka
+                                    )
+                                }
+                            }
+                        } else {
+                            errorMessage = "Kode captcha harus diisi"
+                        }
+                    },
+                    enabled = captchaCode.isNotEmpty() && isLoading !is VehicleDetailUiState.Loading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .shadow(
+                            4.dp,
+                            RoundedCornerShape(12.dp),
+                            spotColor = MaterialTheme.colorScheme.tertiary
+                        ),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    if (isLoading is VehicleDetailUiState.Loading) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = null
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Verifikasi",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                
+                // Back Button
+                Spacer(modifier = Modifier.height(12.dp))
+                TextButton(
+                    onClick = { navController.navigateUp() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Kembali")
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun ErrorState(message: String) {

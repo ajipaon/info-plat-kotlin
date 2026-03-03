@@ -27,7 +27,7 @@ fun NavGraphBuilder.navRegistration(navController: NavController) {
     }
 
     composable(
-        route = VehicleDetailDestination.route + "?data={data}&rawData={rawData}&province={province}",
+        route = VehicleDetailDestination.route + "?data={data}&rawData={rawData}&province={province}&provinceCode={provinceCode}&headPlat={headPlat}&bodyPlat={bodyPlat}&tailPlat={tailPlat}&noRangka={noRangka}",
         arguments = listOf(
             navArgument("data") {
                 type = NavType.StringType
@@ -40,6 +40,26 @@ fun NavGraphBuilder.navRegistration(navController: NavController) {
             navArgument("province") {
                 type = NavType.StringType
                 nullable = true
+            },
+            navArgument("provinceCode") {
+                type = NavType.StringType
+                nullable = true
+            },
+            navArgument("headPlat") {
+                type = NavType.StringType
+                nullable = true
+            },
+            navArgument("bodyPlat") {
+                type = NavType.StringType
+                nullable = true
+            },
+            navArgument("tailPlat") {
+                type = NavType.StringType
+                nullable = true
+            },
+            navArgument("noRangka") {
+                type = NavType.StringType
+                nullable = true
             }
         )
     ) { backStackEntry ->
@@ -47,8 +67,7 @@ fun NavGraphBuilder.navRegistration(navController: NavController) {
         val dataParam = backStackEntry.arguments?.getString("data")
         val jabarPajakData = VehicleDetailDestination.parseData(dataParam)
         
-        // If old data is not available, use new route parameters
-        // The VehicleDetailScreen will handle parsing rawData and province
+        // VehicleDetailScreen will handle parsing all parameters and fetch data accordingly
         VehicleDetailScreen(
             navController = navController,
             jabarPajakData = jabarPajakData
