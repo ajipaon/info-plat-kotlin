@@ -159,8 +159,6 @@ fun PlateCheckScreen(
                                             // OCR Success: Remove spaces and verify
                                             val ocrText = ocrResult.getOrNull()?.data?.replace(" ", "") ?: ""
                                             
-                                            isLoading = false
-                                            
                                             // Verify with OCR result
                                             val nopol = "$headPlat$bodyPlat$tailPlat".lowercase()
                                             val verifyResult = viewModel.getJatimVehicleInfo(
@@ -172,26 +170,28 @@ fun PlateCheckScreen(
                                             
                                             verifyResult.onSuccess { response ->
                                                 if (response.status == "success") {
-                                                    // Convert Jatim response to Jabar response format for navigation
-                                                    val jabarResponse = convertJatimToJabar(response)
-                                                    navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                                    // Convert data here to avoid delay
+                                                    val convertedData = convertJatimToJabar(response)
+                                                    navController.navigate(VehicleDetailDestination.createRoute(convertedData))
                                                 } else {
                                                     // Verification failed even with OCR, now show captcha to user
                                                     // Update viewModel with captcha data so UI shows it
                                                     viewModel.setCaptchaData(captchaResponse)
                                                     errorMessage = response.message ?: "Gagal memverifikasi captcha"
                                                 }
+                                                isLoading = false
                                             }.onFailure {
                                                 // Verification failed, show captcha to user
                                                 viewModel.setCaptchaData(captchaResponse)
                                                 errorMessage = it.message
+                                                isLoading = false
                                             }
                                         } else {
                                             // OCR Failed: Show captcha to user for manual input
-                                            isLoading = false
                                             // Update viewModel with captcha data so UI shows it
                                             viewModel.setCaptchaData(captchaResponse)
                                             errorMessage = ocrResult.getOrNull()?.data ?: "OCR gagal, silakan input manual"
+                                            isLoading = false
                                         }
                                     } else {
                                         isLoading = false
@@ -207,7 +207,7 @@ fun PlateCheckScreen(
                             }
                         }
                         "JBR" -> {
-                            // Jabar: Direct check
+                            // Jabar: Direct check (data already in Jabar format)
                             if (headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty()) {
                                 isLoading = true
                                 coroutineScope.launch {
@@ -219,6 +219,7 @@ fun PlateCheckScreen(
                                     )
                                     isLoading = false
                                     result.onSuccess { response ->
+                                        // Data is already in Jabar format, pass directly
                                         navController.navigate(VehicleDetailDestination.createRoute(response))
                                     }.onFailure {
                                         errorMessage = it.message
@@ -241,9 +242,9 @@ fun PlateCheckScreen(
                                     )
                                     isLoading = false
                                     result.onSuccess { response ->
-                                        // Convert DIY response to Jabar response format for navigation
-                                        val jabarResponse = convertDiypToJabar(response)
-                                        navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                        // Convert data here to avoid delay
+                                        val convertedData = convertDiypToJabar(response)
+                                        navController.navigate(VehicleDetailDestination.createRoute(convertedData))
                                     }.onFailure {
                                         errorMessage = it.message
                                     }
@@ -265,9 +266,9 @@ fun PlateCheckScreen(
                                     )
                                     isLoading = false
                                     result.onSuccess { response ->
-                                        // Convert Banten response to Jabar response format for navigation
-                                        val jabarResponse = convertBantenToJabar(response)
-                                        navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                        // Convert data here to avoid delay
+                                        val convertedData = convertBantenToJabar(response)
+                                        navController.navigate(VehicleDetailDestination.createRoute(convertedData))
                                     }.onFailure {
                                         errorMessage = it.message
                                     }
@@ -290,9 +291,9 @@ fun PlateCheckScreen(
                                     )
                                     isLoading = false
                                     result.onSuccess { response ->
-                                        // Convert Bali response to Jabar response format for navigation
-                                        val jabarResponse = convertBaliToJabar(response)
-                                        navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                        // Convert data here to avoid delay
+                                        val convertedData = convertBaliToJabar(response)
+                                        navController.navigate(VehicleDetailDestination.createRoute(convertedData))
                                     }.onFailure {
                                         errorMessage = it.message
                                     }
@@ -318,9 +319,9 @@ fun PlateCheckScreen(
                                     )
                                     isLoading = false
                                     result.onSuccess { response ->
-                                        // Convert Bangka Belitung response to Jabar response format for navigation
-                                        val jabarResponse = convertBangkaBelitungToJabar(response)
-                                        navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                        // Convert data here to avoid delay
+                                        val convertedData = convertBangkaBelitungToJabar(response)
+                                        navController.navigate(VehicleDetailDestination.createRoute(convertedData))
                                     }.onFailure {
                                         errorMessage = it.message
                                     }
@@ -343,9 +344,9 @@ fun PlateCheckScreen(
                                     )
                                     isLoading = false
                                     result.onSuccess { response ->
-                                        // Convert Lampung response to Jabar response format for navigation
-                                        val jabarResponse = convertLampungToJabar(response)
-                                        navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                        // Convert data here to avoid delay
+                                        val convertedData = convertLampungToJabar(response)
+                                        navController.navigate(VehicleDetailDestination.createRoute(convertedData))
                                     }.onFailure {
                                         errorMessage = it.message
                                     }
@@ -372,9 +373,9 @@ fun PlateCheckScreen(
                                     )
                                     isLoading = false
                                     result.onSuccess { response ->
-                                        // Convert Riau response to Jabar response format for navigation
-                                        val jabarResponse = convertRiauToJabar(response)
-                                        navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                        // Convert data here to avoid delay
+                                        val convertedData = convertRiauToJabar(response)
+                                        navController.navigate(VehicleDetailDestination.createRoute(convertedData))
                                     }.onFailure {
                                         errorMessage = it.message
                                     }
@@ -401,9 +402,9 @@ fun PlateCheckScreen(
                                     )
                                     isLoading = false
                                     result.onSuccess { response ->
-                                        // Convert Sumbar response to Jabar response format for navigation
-                                        val jabarResponse = convertSumbarToJabar(response)
-                                        navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                        // Convert data here to avoid delay
+                                        val convertedData = convertSumbarToJabar(response)
+                                        navController.navigate(VehicleDetailDestination.createRoute(convertedData))
                                     }.onFailure {
                                         errorMessage = it.message
                                     }
@@ -432,17 +433,18 @@ fun PlateCheckScreen(
                                 nopol = nopol,
                                 norang = noRangka
                             )
-                            isLoading = false
                             result.onSuccess { response ->
                                 if (response.status == "success") {
-                                    // Convert Jatim response to Jabar response format for navigation
-                                    val jabarResponse = convertJatimToJabar(response)
-                                    navController.navigate(VehicleDetailDestination.createRoute(jabarResponse))
+                                    // Convert data here to avoid delay
+                                    val convertedData = convertJatimToJabar(response)
+                                    navController.navigate(VehicleDetailDestination.createRoute(convertedData))
                                 } else {
                                     errorMessage = response.message ?: "Gagal memverifikasi captcha"
                                 }
+                                isLoading = false
                             }.onFailure {
                                 errorMessage = it.message
+                                isLoading = false
                             }
                         }
                     } else {

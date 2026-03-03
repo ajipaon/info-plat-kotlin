@@ -32,12 +32,21 @@ object VehicleDetailDestination: Destination {
     override val icon = Icons.Filled.Home
     
     private const val DATA_PARAM = "data"
+    private const val PROVINCE_PARAM = "province"
+    private const val RAW_DATA_PARAM = "rawData"
     
+    // Old route for backward compatibility - accepts pre-converted JabarPajakResponse
     fun createRoute(data: JabarPajakResponse): String {
         val gson = Gson()
         val json = gson.toJson(data)
         val encodedData = Uri.encode(json)
         return "$route?$DATA_PARAM=$encodedData"
+    }
+    
+    // New route - accepts raw province-specific response data
+    fun createRoute(rawData: String, provinceCode: String): String {
+        val encodedData = Uri.encode(rawData)
+        return "$route?$RAW_DATA_PARAM=$encodedData&$PROVINCE_PARAM=$provinceCode"
     }
     
     fun parseData(encodedData: String?): JabarPajakResponse? {
@@ -47,6 +56,15 @@ object VehicleDetailDestination: Destination {
             gson.fromJson(decodedData, JabarPajakResponse::class.java)
         } catch (e: Exception) {
             null
+        }
+    }
+    
+    fun parseRawData(encodedRawData: String?, provinceCode: String?): Pair<String?, String?> {
+        return try {
+            val decodedRawData = Uri.decode(encodedRawData)
+            Pair(decodedRawData, provinceCode)
+        } catch (e: Exception) {
+            Pair(null, null)
         }
     }
 }

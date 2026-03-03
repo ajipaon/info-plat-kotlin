@@ -10,7 +10,7 @@ import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +34,12 @@ import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material3.HorizontalDivider
 import androidx.navigation.NavController
 import com.paondev.infoplat.data.api.JabarPajakResponse
+import com.paondev.infoplat.data.api.JabarPajakData
+import com.paondev.infoplat.ui.components.VehicleDetailSkeleton
+import com.paondev.infoplat.ui.viewmodel.VehicleDetailViewModel
+import com.paondev.infoplat.ui.viewmodel.VehicleDetailUiState
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.paondev.infoplat.navigation.VehicleDetailDestination
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -61,25 +67,58 @@ fun formatDate(dateString: String): String {
 @Composable
 fun VehicleDetailScreen(
     navController: NavController,
+    viewModel: VehicleDetailViewModel = hiltViewModel(),
     jabarPajakData: JabarPajakResponse? = null
 ) {
-    val data = jabarPajakData?.data
+    var vehicleData by remember { mutableStateOf<JabarPajakData?>(null) }
+    val backStackEntry = navController.currentBackStackEntry
+    
+    // Parse pre-converted data from route parameters
+    LaunchedEffect(backStackEntry) {
+        if (jabarPajakData == null) {
+            val encodedData = backStackEntry?.arguments?.getString("data")
+            
+            if (encodedData != null) {
+                val decodedData = VehicleDetailDestination.parseData(encodedData)
+                vehicleData = decodedData?.data
+            }
+        } else {
+            vehicleData = jabarPajakData.data
+        }
+    }
+    
+    // Use pre-converted data directly
+    val data = vehicleData
+    
+    // No skeleton or error states needed since data is already converted
+    val showSkeleton = false
+    val errorMessage = null
     
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
-        item {
-            LicensePlateHeroDetail(data?.noPolisi, data?.infoPkbPnpb?.wilayah)
-        }
+        if (showSkeleton) {
+            item {
+                VehicleDetailSkeleton()
+            }
+        } else if (errorMessage != null) {
+            item {
+                ErrorState(message = errorMessage)
+            }
+        } else {
+            item {
+                LicensePlateHeroDetail(vehicleData?.noPolisi, vehicleData?.infoPkbPnpb?.wilayah)
+            }
 
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-            VehicleSpecificationCard(data)
-        }
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                VehicleSpecificationCard(vehicleData)
+            }
 
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-            TaxStatusCard(data)
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                TaxStatusCard(vehicleData)
+            }
         }
 
 //        item {
@@ -391,7 +430,11 @@ fun SpecColorItem(
 @Composable
 fun TaxStatusCard(data: com.paondev.infoplat.data.api.JabarPajakData?) {
     val stnkExpiry = data?.infoPkbPnpb?.tanggalStnk?.let { formatDate(it) } ?: "15 June 2025"
-    val taxYear = data?.masaPajak?.tanggalBerlakuSampai?.substring(0, 4) ?: "2024"
+    val taxYear = if (data?.masaPajak?.tanggalBerlakuSampai != null && data.masaPajak.tanggalBerlakuSampai.length >= 4) {
+        data.masaPajak.tanggalBerlakuSampai.substring(0, 4)
+    } else {
+        "2024"
+    }
     val statusText = data?.keterangan ?: "UNKNOWN"
     val isPaid = data?.canBePaid == false
     val statusColor = if (isPaid) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
@@ -574,6 +617,36 @@ fun TaxBreakdownItem(
     }
 }
 
+
+@Composable
+fun ErrorState(message: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Error,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(64.dp)
+            )
+            Text(
+                message,
+                style = TextStyle(
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+            )
+        }
+    }
+}
 
 //@Preview(showBackground = true)
 //@Composable
