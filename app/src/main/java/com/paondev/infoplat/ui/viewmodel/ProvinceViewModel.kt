@@ -16,6 +16,7 @@ import com.paondev.infoplat.data.api.JabarPajakResponse
 import com.paondev.infoplat.data.api.JatimCaptchaResponse
 import com.paondev.infoplat.data.api.JatimPkbResponse
 import com.paondev.infoplat.data.repository.ProvinceRepository
+import com.paondev.infoplat.config.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +26,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProvinceViewModel @Inject constructor(
-    private val repository: ProvinceRepository
+    private val repository: ProvinceRepository,
+    private val dataStoreManager: DataStoreManager
 ) : ViewModel() {
 
     private val _provinces = MutableStateFlow<List<Province>>(emptyList())
@@ -52,6 +54,20 @@ class ProvinceViewModel @Inject constructor(
 
     init {
         fetchProvinces()
+        loadSelectedProvince()
+    }
+
+    private fun loadSelectedProvince() {
+        viewModelScope.launch {
+            dataStoreManager.getSelectedProvince().collect { provinceCode ->
+                if (provinceCode != null && _provinces.value.isNotEmpty()) {
+                    val province = _provinces.value.find { it.kode == provinceCode }
+                    if (province != null && province.isActive) {
+                        _selectedProvince.value = province
+                    }
+                }
+            }
+        }
     }
 
     fun selectProvince(province: Province) {
@@ -59,6 +75,10 @@ class ProvinceViewModel @Inject constructor(
         // Reset captcha state when province changes
         _captchaData.value = null
         _captchaError.value = null
+        // Save selected province to DataStore
+        viewModelScope.launch {
+            dataStoreManager.saveSelectedProvince(province.kode)
+        }
     }
 
     fun fetchProvinces() {

@@ -31,7 +31,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,13 +59,6 @@ fun ProvinceSelectorCard(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val selectedProvince by viewModel.selectedProvince.collectAsState()
-    
-    // Initialize selected province if not set
-    LaunchedEffect(provinces) {
-        if (selectedProvince == null && provinces.isNotEmpty()) {
-            viewModel.selectProvince(provinces.first())
-        }
-    }
 
     Card(
         shape = RoundedCornerShape(16.dp),
