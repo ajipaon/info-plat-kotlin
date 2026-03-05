@@ -135,7 +135,13 @@ fun ProvinceSelectorCard(
                 provinces = provinces,
                 isLoading = isLoading,
                 error = error,
-                selectedProvince = selectedProvince ?: com.paondev.infoplat.data.allProvinces.first(),
+                selectedProvince = selectedProvince ?: provinces.firstOrNull() ?: Province(
+                    name = "",
+                    kode = "",
+                    isActive = false,
+                    withNoRangka = false,
+                    withNik = false
+                ),
                 onSelect = {
                     viewModel.selectProvince(it)
                     showModal = false

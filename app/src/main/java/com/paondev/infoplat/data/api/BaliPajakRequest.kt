@@ -16,5 +16,8 @@ data class BaliPajakRequest(
     val tailPlat: String,
 
     @SerializedName("no_rangka")
-    val noRangka: String? = null
+    val noRangka: String? = null,
+
+    @SerializedName("no_nik")
+    val noNik: String? = null
 )

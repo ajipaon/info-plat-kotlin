@@ -87,6 +87,7 @@ fun PlateCheckScreen(
     var bodyPlat by remember { mutableStateOf("") }
     var tailPlat by remember { mutableStateOf("") }
     var noRangka by remember { mutableStateOf("") }
+    var noNik by remember { mutableStateOf("") }
     var captchaCode by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -96,6 +97,7 @@ fun PlateCheckScreen(
     LaunchedEffect(selectedProvince?.kode) {
         captchaCode = ""
         noRangka = ""
+        noNik = ""
         errorMessage = null
     }
     
@@ -122,6 +124,8 @@ fun PlateCheckScreen(
                 onTailPlatChange = { tailPlat = it },
                 noRangka = noRangka,
                 onNoRangkaChange = { noRangka = it },
+                noNik = noNik,
+                onNoNikChange = { noNik = it },
                 captchaData = captchaData,
                 captchaCode = captchaCode,
                 onCaptchaCodeChange = { captchaCode = it },
@@ -150,10 +154,16 @@ fun PlateCheckScreen(
                     }
                     
                     val isJatim = provinceCode == "JTM"
-                    val needsNoRangka = isJatim || provinceCode == "BALI" || provinceCode == "BDRLMP" || provinceCode == "RIAU" || provinceCode == "SUMBAR"
+                    val needsNoRangka = selectedProvince?.withNoRangka == true
+                    val needsNoNik = selectedProvince?.withNik == true
                     
                     if (needsNoRangka && noRangka.length != 5) {
                         errorMessage = "No Rangka harus terdiri dari 5 digit"
+                        return@PlateCheckHeroSection
+                    }
+                    
+                    if (needsNoNik && noNik.length != 16) {
+                        errorMessage = "NIK harus terdiri dari 16 digit"
                         return@PlateCheckHeroSection
                     }
                     
@@ -164,7 +174,8 @@ fun PlateCheckScreen(
                             headPlat = headPlat,
                             bodyPlat = bodyPlat,
                             tailPlat = tailPlat,
-                            noRangka = noRangka
+                            noRangka = noRangka,
+                            noNik = noNik
                         )
                     )
                 },
@@ -248,6 +259,8 @@ fun PlateCheckHeroSection(
     onTailPlatChange: (String) -> Unit,
     noRangka: String,
     onNoRangkaChange: (String) -> Unit,
+    noNik: String,
+    onNoNikChange: (String) -> Unit,
     captchaData: com.paondev.infoplat.data.api.JatimCaptchaResponse?,
     captchaCode: String,
     onCaptchaCodeChange: (String) -> Unit,
@@ -261,12 +274,9 @@ fun PlateCheckHeroSection(
     onRefreshCaptcha: () -> Unit
 ) {
     val isJatim = selectedProvince?.kode == "JTM"
-    val isBali = selectedProvince?.kode == "BALI"
-    val isLampung = selectedProvince?.kode == "BDRLMP"
-    val isRiau = selectedProvince?.kode == "RIAU"
-    val isSumbar = selectedProvince?.kode == "SUMBAR"
     val showCaptcha = isJatim && captchaData != null
-    val showNoRangka = isJatim || isBali || isLampung || isRiau || isSumbar
+    val showNoRangka = selectedProvince?.withNoRangka == true
+    val showNoNik = selectedProvince?.withNik == true
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -316,12 +326,21 @@ fun PlateCheckHeroSection(
                         onTailPlatChange = onTailPlatChange
                     )
 
-                    // Show No Rangka input for Jatim and Bali
+                    // Show No Rangka input if required
                     if (showNoRangka) {
                         Spacer(modifier = Modifier.height(16.dp))
                         NoRangkaInput(
                             noRangka = noRangka,
                             onNoRangkaChange = onNoRangkaChange
+                        )
+                    }
+
+                    // Show NIK input if required
+                    if (showNoNik) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        NoNikInput(
+                            noNik = noNik,
+                            onNoNikChange = onNoNikChange
                         )
                     }
                 }
@@ -349,7 +368,8 @@ fun PlateCheckHeroSection(
                             captchaCode.isNotEmpty()
                         } else {
                             headPlat.isNotEmpty() && bodyPlat.isNotEmpty() && tailPlat.isNotEmpty() &&
-                            if (isJatim) noRangka.length == 5 else true
+                            if (showNoRangka) noRangka.length == 5 else true &&
+                            if (showNoNik) noNik.length == 16 else true
                         }
                     ),
                     modifier = Modifier
@@ -590,6 +610,62 @@ fun NoRangkaInput(
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Medium
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun NoNikInput(
+    noNik: String,
+    onNoNikChange: (String) -> Unit
+) {
+    Column {
+        Text(
+            text = "NIK (16 digit)",
+            style = TextStyle(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        BasicTextField(
+            value = noNik,
+            onValueChange = { 
+                if (it.length <= 16 && it.all { char -> char.isDigit() }) {
+                    onNoNikChange(it)
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.background)
+                .border(2.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(12.dp))
+                .padding(horizontal = 16.dp),
+            textStyle = TextStyle(
+                color = MaterialTheme.colorScheme.tertiary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
+            ),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.tertiary),
+            decorationBox = { innerTextField ->
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (noNik.isEmpty()) {
+                        Text(
+                            "Masukkan 16 digit NIK",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                            fontSize = 16.sp
                         )
                     }
                     innerTextField()

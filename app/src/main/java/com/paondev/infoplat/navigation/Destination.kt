@@ -55,14 +55,16 @@ object VehicleDetailDestination: Destination {
         headPlat: String,
         bodyPlat: String,
         tailPlat: String,
-        noRangka: String = ""
+        noRangka: String = "",
+        noNik: String = ""
     ): String {
         return "$route" +
                 "?provinceCode=$provinceCode" +
                 "&headPlat=$headPlat" +
                 "&bodyPlat=$bodyPlat" +
                 "&tailPlat=$tailPlat" +
-                "&noRangka=$noRangka"
+                "&noRangka=$noRangka" +
+                "&noNik=$noNik"
     }
     
     fun parseData(encodedData: String?): JabarPajakResponse? {
@@ -90,7 +92,8 @@ object VehicleDetailDestination: Destination {
         headPlat: String?,
         bodyPlat: String?,
         tailPlat: String?,
-        noRangka: String?
+        noRangka: String?,
+        noNik: String?
     ): PlateParameters? {
         return if (provinceCode != null && headPlat != null && bodyPlat != null && tailPlat != null) {
             PlateParameters(
@@ -98,7 +101,8 @@ object VehicleDetailDestination: Destination {
                 headPlat = headPlat,
                 bodyPlat = bodyPlat,
                 tailPlat = tailPlat,
-                noRangka = noRangka ?: ""
+                noRangka = noRangka ?: "",
+                noNik = noNik ?: ""
             )
         } else {
             null
@@ -111,5 +115,6 @@ data class PlateParameters(
     val headPlat: String,
     val bodyPlat: String,
     val tailPlat: String,
-    val noRangka: String
+    val noRangka: String,
+    val noNik: String
 )

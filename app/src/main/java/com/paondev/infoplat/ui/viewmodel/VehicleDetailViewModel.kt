@@ -28,21 +28,22 @@ class VehicleDetailViewModel @Inject constructor(
         headPlat: String,
         bodyPlat: String,
         tailPlat: String,
-        noRangka: String = ""
+        noRangka: String = "",
+        noNik: String = ""
     ) {
         _uiState.value = VehicleDetailUiState.Loading
         
         viewModelScope.launch {
             when (provinceCode) {
-                "JTM" -> fetchJatimVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+                "JTM" -> fetchJatimVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
                 "JBR" -> fetchJabarVehicleData(provinceCode, headPlat, bodyPlat, tailPlat)
                 "DIY" -> fetchDiypVehicleData(provinceCode, headPlat, bodyPlat, tailPlat)
                 "BNTN" -> fetchBantenVehicleData(provinceCode, headPlat, bodyPlat, tailPlat)
-                "BALI" -> fetchBaliVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
-                "BNKLU" -> fetchBangkaBelitungVehicleData(provinceCode, headPlat, bodyPlat, tailPlat)
-                "BDRLMP" -> fetchLampungVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
-                "RIAU" -> fetchRiauVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
-                "SUMBAR" -> fetchSumbarVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+                "BALI" -> fetchBaliVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
+                "BNKLU" -> fetchBangkaBelitungVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, "", noNik)
+                "BDRLMP" -> fetchLampungVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
+                "RIAU" -> fetchRiauVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
+                "SUMBAR" -> fetchSumbarVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
                 else -> {
                     _uiState.value = VehicleDetailUiState.Error("Provinsi tidak didukung")
                 }
@@ -55,7 +56,8 @@ class VehicleDetailViewModel @Inject constructor(
         headPlat: String,
         bodyPlat: String,
         tailPlat: String,
-        noRangka: String
+        noRangka: String,
+        noNik: String = ""
     ) {
         try {
             // Get captcha
@@ -214,10 +216,11 @@ class VehicleDetailViewModel @Inject constructor(
         headPlat: String,
         bodyPlat: String,
         tailPlat: String,
-        noRangka: String
+        noRangka: String,
+        noNik: String = ""
     ) {
         try {
-            val result = repository.getBaliVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+            val result = repository.getBaliVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
             if (result.isSuccess) {
                 val convertedData = convertBaliToJabar(result.getOrNull()!!)
                 if (convertedData.data != null) {
@@ -238,10 +241,12 @@ class VehicleDetailViewModel @Inject constructor(
         provinceCode: String,
         headPlat: String,
         bodyPlat: String,
-        tailPlat: String
+        tailPlat: String,
+        noRangka: String = "",
+        noNik: String = ""
     ) {
         try {
-            val result = repository.getBangkaBelitungVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat)
+            val result = repository.getBangkaBelitungVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
             if (result.isSuccess) {
                 val convertedData = convertBangkaBelitungToJabar(result.getOrNull()!!)
                 if (convertedData.data != null) {
@@ -263,10 +268,11 @@ class VehicleDetailViewModel @Inject constructor(
         headPlat: String,
         bodyPlat: String,
         tailPlat: String,
-        noRangka: String
+        noRangka: String,
+        noNik: String = ""
     ) {
         try {
-            val result = repository.getLampungVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+            val result = repository.getLampungVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
             if (result.isSuccess) {
                 val convertedData = convertLampungToJabar(result.getOrNull()!!)
                 if (convertedData.data != null) {
@@ -288,10 +294,11 @@ class VehicleDetailViewModel @Inject constructor(
         headPlat: String,
         bodyPlat: String,
         tailPlat: String,
-        noRangka: String
+        noRangka: String,
+        noNik: String = ""
     ) {
         try {
-            val result = repository.getRiauVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+            val result = repository.getRiauVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
             if (result.isSuccess) {
                 val convertedData = convertRiauToJabar(result.getOrNull()!!)
                 if (convertedData.data != null) {
@@ -313,10 +320,11 @@ class VehicleDetailViewModel @Inject constructor(
         headPlat: String,
         bodyPlat: String,
         tailPlat: String,
-        noRangka: String
+        noRangka: String,
+        noNik: String = ""
     ) {
         try {
-            val result = repository.getSumbarVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka)
+            val result = repository.getSumbarVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
             if (result.isSuccess) {
                 val convertedData = convertSumbarToJabar(result.getOrNull()!!)
                 if (convertedData.data != null) {

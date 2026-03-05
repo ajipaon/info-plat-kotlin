@@ -100,7 +100,8 @@ fun VehicleDetailScreen(
             headPlat = backStackEntry?.arguments?.getString("headPlat"),
             bodyPlat = backStackEntry?.arguments?.getString("bodyPlat"),
             tailPlat = backStackEntry?.arguments?.getString("tailPlat"),
-            noRangka = backStackEntry?.arguments?.getString("noRangka")
+            noRangka = backStackEntry?.arguments?.getString("noRangka"),
+            noNik = backStackEntry?.arguments?.getString("noNik")
         )
         
         if (plateParams != null) {
@@ -109,7 +110,8 @@ fun VehicleDetailScreen(
                 headPlat = plateParams.headPlat,
                 bodyPlat = plateParams.bodyPlat,
                 tailPlat = plateParams.tailPlat,
-                noRangka = plateParams.noRangka
+                noRangka = plateParams.noRangka,
+                noNik = plateParams.noNik
             )
         }
     }
@@ -850,7 +852,8 @@ fun CaptchaInputScreen(
                                     headPlat = it.getString("headPlat"),
                                     bodyPlat = it.getString("bodyPlat"),
                                     tailPlat = it.getString("tailPlat"),
-                                    noRangka = it.getString("noRangka")
+                                    noRangka = it.getString("noRangka"),
+                                    noNik = it.getString("noNik")
                                 )
                             }
                             

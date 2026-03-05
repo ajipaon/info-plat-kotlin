@@ -16,5 +16,8 @@ data class SumbarPajakRequest(
     val tailPlat: String,
 
     @SerializedName("no_rangka")
-    val noRangka: String
+    val noRangka: String,
+
+    @SerializedName("no_nik")
+    val noNik: String? = null
 )

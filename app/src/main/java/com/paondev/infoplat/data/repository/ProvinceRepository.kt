@@ -280,7 +280,8 @@ class ProvinceRepository(
         headPlat: String,
         bodyPlat: String,
         tailPlat: String,
-        noRangka: String
+        noRangka: String,
+        noNik: String = ""
     ): Result<BaliPajakResponse> {
         return withContext(Dispatchers.IO) {
             try {
@@ -291,7 +292,8 @@ class ProvinceRepository(
                         headPlat = headPlat.uppercase(Locale.ROOT),
                         bodyPlat = bodyPlat,
                         tailPlat = tailPlat.uppercase(Locale.ROOT),
-                        noRangka = noRangka
+                        noRangka = noRangka,
+                        noNik = noNik.ifEmpty { null }
                     )
                     val response = api.getBaliPajakInfo(
                         url = BuildConfig.API_URL_INFO_PLAT,
@@ -330,7 +332,9 @@ class ProvinceRepository(
         provinceCode: String,
         headPlat: String,
         bodyPlat: String,
-        tailPlat: String
+        tailPlat: String,
+        noRangka: String = "",
+        noNik: String = ""
     ): Result<BangkaBelitungPajakResponse> {
         return withContext(Dispatchers.IO) {
             try {
@@ -341,7 +345,8 @@ class ProvinceRepository(
                         headPlat = headPlat.uppercase(Locale.ROOT),
                         bodyPlat = bodyPlat,
                         tailPlat = tailPlat.uppercase(Locale.ROOT),
-                        noRangka = null
+                        noRangka = noRangka.ifEmpty { null },
+                        noNik = noNik.ifEmpty { null }
                     )
                     val response = api.getBangkaBelitungPajakInfo(
                         url = BuildConfig.API_URL_INFO_PLAT,
@@ -381,7 +386,8 @@ class ProvinceRepository(
         headPlat: String,
         bodyPlat: String,
         tailPlat: String,
-        noRangka: String
+        noRangka: String,
+        noNik: String = ""
     ): Result<LampungPajakResponse> {
         return withContext(Dispatchers.IO) {
             try {
@@ -392,7 +398,8 @@ class ProvinceRepository(
                         headPlat = headPlat.uppercase(Locale.ROOT),
                         bodyPlat = bodyPlat,
                         tailPlat = tailPlat.uppercase(Locale.ROOT),
-                        noRangka = noRangka
+                        noRangka = noRangka,
+                        noNik = noNik.ifEmpty { null }
                     )
                     val response = api.getLampungPajakInfo(
                         url = BuildConfig.API_URL_INFO_PLAT,
@@ -432,7 +439,8 @@ class ProvinceRepository(
         headPlat: String,
         bodyPlat: String,
         tailPlat: String,
-        noRangka: String
+        noRangka: String,
+        noNik: String = ""
     ): Result<RiauPajakResponse> {
         return withContext(Dispatchers.IO) {
             try {
@@ -443,7 +451,8 @@ class ProvinceRepository(
                         headPlat = headPlat.uppercase(Locale.ROOT),
                         bodyPlat = bodyPlat,
                         tailPlat = tailPlat.uppercase(Locale.ROOT),
-                        noRangka = noRangka
+                        noRangka = noRangka,
+                        noNik = noNik.ifEmpty { null }
                     )
                     val response = api.getRiauPajakInfo(
                         url = BuildConfig.API_URL_INFO_PLAT,
@@ -483,7 +492,8 @@ class ProvinceRepository(
         headPlat: String,
         bodyPlat: String,
         tailPlat: String,
-        noRangka: String
+        noRangka: String,
+        noNik: String = ""
     ): Result<SumbarPajakResponse> {
         return withContext(Dispatchers.IO) {
             try {
@@ -494,7 +504,8 @@ class ProvinceRepository(
                         headPlat = headPlat.uppercase(Locale.ROOT),
                         bodyPlat = bodyPlat,
                         tailPlat = tailPlat.uppercase(Locale.ROOT),
-                        noRangka = noRangka
+                        noRangka = noRangka,
+                        noNik = noNik.ifEmpty { null }
                     )
                     val response = api.getSumbarPajakInfo(
                         url = BuildConfig.API_URL_INFO_PLAT,
