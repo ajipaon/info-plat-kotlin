@@ -99,7 +99,7 @@ interface InfoPlatApi {
     @POST
     suspend fun getSumbarPajakInfo(
         @Url url: String = "https://info-plat.ajisetiawan883.workers.dev/api/plat/check",
-        @Body request: SumbarPajakRequest
+        @Body request: UniversalPajakRequest
     ): Response<SumbarPajakResponse>
 
     @POST

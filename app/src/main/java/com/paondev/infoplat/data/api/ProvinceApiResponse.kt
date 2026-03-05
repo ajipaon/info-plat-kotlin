@@ -6,7 +6,7 @@ data class ProvinceApiResponse(
     val success: Boolean,
     val data: List<ProvinceResponse>
 )
-
+//@JsonIgnoreProperties(ignoreUnknown = true)
 data class ProvinceResponse(
     val kode: String,
     val name: String,

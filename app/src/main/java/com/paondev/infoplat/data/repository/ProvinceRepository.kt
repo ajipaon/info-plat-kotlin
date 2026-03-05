@@ -14,7 +14,6 @@ import com.paondev.infoplat.data.api.LampungPajakRequest
 import com.paondev.infoplat.data.api.LampungPajakResponse
 import com.paondev.infoplat.data.api.RiauPajakRequest
 import com.paondev.infoplat.data.api.RiauPajakResponse
-import com.paondev.infoplat.data.api.SumbarPajakRequest
 import com.paondev.infoplat.data.api.SumbarPajakResponse
 import com.paondev.infoplat.data.api.UniversalPajakRequest
 import com.paondev.infoplat.data.api.OcrRequest
@@ -500,7 +499,7 @@ class ProvinceRepository(
             try {
                 if (provinceCode == "SUMBAR") {
                     val noPolisi = "$headPlat $bodyPlat $tailPlat".trim()
-                    val request = SumbarPajakRequest(
+                    val request = UniversalPajakRequest(
                         kode = "SUMBAR",
                         headPlat = headPlat.uppercase(Locale.ROOT),
                         bodyPlat = bodyPlat,
