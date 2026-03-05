@@ -44,9 +44,7 @@ class VehicleDetailViewModel @Inject constructor(
                 "BDRLMP" -> fetchLampungVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
                 "RIAU" -> fetchRiauVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
                 "SUMBAR" -> fetchSumbarVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
-                else -> {
-                    _uiState.value = VehicleDetailUiState.Error("Provinsi tidak didukung")
-                }
+                else -> fetchUniversalVehicleData(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
             }
         }
     }
@@ -866,6 +864,32 @@ class VehicleDetailViewModel @Inject constructor(
                 code = "400",
                 data = null
             )
+        }
+    }
+    
+    private suspend fun fetchUniversalVehicleData(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String,
+        noRangka: String = "",
+        noNik: String = ""
+    ) {
+        try {
+            val result = repository.getUniversalVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
+            if (result.isSuccess) {
+                val response = result.getOrNull()!!
+                if (response.data != null) {
+                    _uiState.value = VehicleDetailUiState.Success(response)
+                } else {
+                    _uiState.value = VehicleDetailUiState.Error(response.message ?: "Data kendaraan tidak ditemukan")
+                }
+            } else {
+                _uiState.value = VehicleDetailUiState.Error(result.exceptionOrNull()?.message ?: "Gagal memuat data")
+            }
+        } catch (e: Exception) {
+            Log.e("VehicleDetailVM", "Error fetching universal data", e)
+            _uiState.value = VehicleDetailUiState.Error("Gagal memuat data kendaraan")
         }
     }
     

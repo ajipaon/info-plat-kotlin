@@ -16,6 +16,7 @@ import com.paondev.infoplat.data.api.RiauPajakRequest
 import com.paondev.infoplat.data.api.RiauPajakResponse
 import com.paondev.infoplat.data.api.SumbarPajakRequest
 import com.paondev.infoplat.data.api.SumbarPajakResponse
+import com.paondev.infoplat.data.api.UniversalPajakRequest
 import com.paondev.infoplat.data.api.OcrRequest
 import com.paondev.infoplat.data.api.OcrResponse
 import com.paondev.infoplat.data.api.DiypPajakResponse
@@ -533,6 +534,55 @@ class ProvinceRepository(
                     }
                 } else {
                     Result.failure(Exception("Province code is not SUMBAR"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    suspend fun getUniversalVehicleInfo(
+        provinceCode: String,
+        headPlat: String,
+        bodyPlat: String,
+        tailPlat: String,
+        noRangka: String = "",
+        noNik: String = ""
+    ): Result<JabarPajakResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val noPolisi = "$headPlat $bodyPlat $tailPlat".trim()
+                val request = UniversalPajakRequest(
+                    kode = provinceCode,
+                    headPlat = headPlat.uppercase(Locale.ROOT),
+                    bodyPlat = bodyPlat,
+                    tailPlat = tailPlat.uppercase(Locale.ROOT),
+                    noRangka = noRangka.ifEmpty { null },
+                    noNik = noNik.ifEmpty { null }
+                )
+                val response = api.getUniversalPajakInfo(
+                    url = BuildConfig.API_URL_INFO_PLAT,
+                    request = request
+                )
+                if (response.isSuccessful && response.body() != null) {
+                    val responseBody = response.body()!!
+                    
+                    // Save to history if data is found (status true with data)
+                    if (responseBody.status && responseBody.data != null) {
+                        val gson = Gson()
+                        val jsonData = gson.toJson(responseBody)
+                        val history = History(
+                            code = noPolisi.uppercase(),
+                            requestDate = Date(),
+                            region = provinceCode,
+                            data = jsonData
+                        )
+                        dao.insertHistory(history)
+                    }
+                    
+                    Result.success(responseBody)
+                } else {
+                    Result.failure(Exception("Failed to get vehicle info: ${response.code()}"))
                 }
             } catch (e: Exception) {
                 Result.failure(e)

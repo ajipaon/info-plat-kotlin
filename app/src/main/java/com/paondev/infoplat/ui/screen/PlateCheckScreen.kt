@@ -153,7 +153,7 @@ fun PlateCheckScreen(
                         return@PlateCheckHeroSection
                     }
                     
-                    val isJatim = provinceCode == "JTM"
+//                    val isJatim = provinceCode == "JTM"
                     val needsNoRangka = selectedProvince?.withNoRangka == true
                     val needsNoNik = selectedProvince?.withNik == true
                     
@@ -811,7 +811,7 @@ fun convertBantenToJabar(bantenResponse: BantenPajakResponse): JabarPajakRespons
         val kendaraan = data.kendaraan
         val pajak = data.pajak
         val totalValue = pajak.jumlahInt
-        
+
         JabarPajakResponse(
             status = true,
             message = pajak.keterangan,
@@ -902,7 +902,7 @@ fun convertDiypToJabar(diypResponse: DiypPajakResponse): JabarPajakResponse {
         val pkbValue = data.pkb.trim()
         val swdklljValue = data.swdkllj.trim()
         val totalValue = (data.pkb.toDoubleOrNull() ?: 0.0) + (data.swdkllj.toDoubleOrNull() ?: 0.0)
-        
+
         JabarPajakResponse(
             status = true,
             message = "Data ditemukan",
@@ -985,21 +985,21 @@ fun convertBaliToJabar(baliResponse: BaliPajakResponse): JabarPajakResponse {
     return if (baliResponse.success && data != null) {
         val detail = data.detail
         val pembayaranList = data.pembayaran
-        
+
         // Extract payment details from the list
         val pkbItem = pembayaranList.find { it.jenis == "PKB" }
         val swdklljItem = pembayaranList.find { it.jenis == "SWDKLLJ" }
         val totalItem = pembayaranList.find { it.jenis == "TOTAL" }
-        
+
         val pkbValue = pkbItem?.jumlah ?: "0"
         val swdklljValue = swdklljItem?.jumlah ?: "0"
         val totalValue = totalItem?.jumlah ?: "0"
-        
+
         // Parse masaBerlaku to extract dates (format: "DD Month YYYY / DD Month YYYY")
         val masaBerlakuParts = detail.masaBerlaku.split(" / ")
         val tanggalPajak = if (masaBerlakuParts.isNotEmpty()) masaBerlakuParts[0].trim() else ""
         val tanggalStnk = if (masaBerlakuParts.size > 1) masaBerlakuParts[1].trim() else ""
-        
+
         JabarPajakResponse(
             status = true,
             message = detail.status,
@@ -1096,7 +1096,7 @@ fun convertBangkaBelitungToJabar(bangkaBelitungResponse: BangkaBelitungPajakResp
     val data = bangkaBelitungResponse.data
     return if (bangkaBelitungResponse.success && data != null) {
         val totalValue = data.jumlahTotal
-        
+
         JabarPajakResponse(
             status = true,
             message = "Data ditemukan",
@@ -1185,7 +1185,7 @@ fun convertLampungToJabar(lampungResponse: LampungPajakResponse): JabarPajakResp
     val data = lampungResponse.data
     return if (lampungResponse.success && data != null) {
         val totalValue = data.jumlahBayar.angka
-        
+
         JabarPajakResponse(
             status = true,
             message = "Data ditemukan",
@@ -1288,7 +1288,7 @@ fun convertSumbarToJabar(sumbarResponse: SumbarPajakResponse): JabarPajakRespons
     val data = sumbarResponse.data
     return if (sumbarResponse.success && data != null) {
         val totalValue = data.jumlah
-        
+
         JabarPajakResponse(
             status = true,
             message = "Data ditemukan",
@@ -1374,7 +1374,7 @@ fun convertRiauToJabar(riauResponse: RiauPajakResponse): JabarPajakResponse {
     val data = riauResponse.data
     return if (riauResponse.success && data != null) {
         val totalValue = data.totalPajakKendaraan
-        
+
         JabarPajakResponse(
             status = true,
             message = "Data ditemukan",

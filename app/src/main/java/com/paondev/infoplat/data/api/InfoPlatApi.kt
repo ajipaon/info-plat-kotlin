@@ -107,4 +107,10 @@ interface InfoPlatApi {
         @Url url: String = "https://info-plat.ajisetiawan883.workers.dev/api/ocr",
         @Body request: OcrRequest
     ): Response<OcrResponse>
+
+    @POST
+    suspend fun getUniversalPajakInfo(
+        @Url url: String = "https://info-plat.ajisetiawan883.workers.dev/api/plat/check",
+        @Body request: UniversalPajakRequest
+    ): Response<JabarPajakResponse>
 }
