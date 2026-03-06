@@ -68,7 +68,7 @@ class VehicleDetailViewModel @Inject constructor(
             val captchaResponse = captchaResult.getOrNull()!!
             
             // Try OCR
-            val ocrResult = repository.solveOcr(captchaResponse.image ?: "")
+            val ocrResult = repository.solveOcr(captchaResponse.image)
             
             if (ocrResult.isSuccess && ocrResult.getOrNull()?.success == true) {
                 // OCR success - verify directly
@@ -324,7 +324,8 @@ class VehicleDetailViewModel @Inject constructor(
         try {
             val result = repository.getSumbarVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
             if (result.isSuccess) {
-                val convertedData = convertSumbarToJabar(result.getOrNull()!!)
+                val universalResponse = result.getOrNull()!!
+                val convertedData = convertUniversalToJabar(universalResponse, "SUMBAR")
                 if (convertedData.data != null) {
                     _uiState.value = VehicleDetailUiState.Success(convertedData)
                 } else {
@@ -366,21 +367,19 @@ class VehicleDetailViewModel @Inject constructor(
                     val riauResponse = Gson().fromJson(rawData, RiauPajakResponse::class.java)
                     convertRiauToJabar(riauResponse)
                 }
-                "SUMBAR" -> {
-                    val sumbarResponse = Gson().fromJson(rawData, SumbarPajakResponse::class.java)
-                    convertSumbarToJabar(sumbarResponse)
-                }
-                "DIY" -> {
-                    val diypResponse = Gson().fromJson(rawData, DiypPajakResponse::class.java)
-                    convertDiypToJabar(diypResponse)
-                }
                 else -> {
-                    JabarPajakResponse(
-                        status = false,
-                        message = "Provinsi tidak dikenal",
-                        code = "400",
-                        data = null
-                    )
+                    // Try as universal response for other provinces
+                    try {
+                        val universalResponse = Gson().fromJson(rawData, UniversalPajakResponse::class.java)
+                        convertUniversalToJabar(universalResponse, provinceCode)
+                    } catch (e: Exception) {
+                        JabarPajakResponse(
+                            status = false,
+                            message = "Provinsi tidak dikenal",
+                            code = "400",
+                            data = null
+                        )
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -389,6 +388,125 @@ class VehicleDetailViewModel @Inject constructor(
                 status = false,
                 message = "Gagal mengkonversi data",
                 code = "500",
+                data = null
+            )
+        }
+    }
+    
+    private fun convertRiauToJabar(riauResponse: RiauPajakResponse): JabarPajakResponse {
+        val data = riauResponse.data
+        return if (riauResponse.success && data != null) {
+            val totalValue = data.totalPajakKendaraan
+            
+            JabarPajakResponse(
+                status = true,
+                message = "Data ditemukan",
+                code = "200",
+                data = JabarPajakData(
+                    namaMerk = data.merekKendaraan,
+                    jenis = data.namaJenis,
+                    tahunBuatan = data.tahunPembuatan,
+                    milikKe = "1",
+                    namaModel = data.namaModel,
+                    warna = data.warnaKendaraan,
+                    noPolisi = data.nopol,
+                    infoPkbPnpb = InfoPkbPnpb(
+                        tanggalPajak = data.tanggalJatuhTempo,
+                        tanggalStnk = data.tanggalStnk,
+                        wilayah = "RIAU"
+                    ),
+                    infoPembayaran = InfoPembayaran(
+                        pkb = TaxDetail(
+                            pokok = data.totalPokokPkb,
+                            denda = data.totalDendaPkb
+                        ),
+                        opsen = TaxDetail(
+                            pokok = data.totalPokokPkbOpsen,
+                            denda = data.totalDendaPkbOpsen
+                        ),
+                        swdkllj = TaxDetail(
+                            pokok = data.totalPokokSwdk,
+                            denda = data.totalDendaSwdk
+                        ),
+                        pnpb = PnpbDetail(stnk = data.stnk, tnkb = data.tnkb),
+                        jumlah = data.totalPajakKendaraan
+                    ),
+                    infoKendaraan = mapOf(
+                        "nopol" to data.nopol,
+                        "namaPemilik" to data.namaPemilik,
+                        "alamat" to data.alamat,
+                        "merekKendaraan" to data.merekKendaraan,
+                        "typeKendaraan" to data.typeKendaraan,
+                        "golonganKendaraan" to data.golonganKendaraan,
+                        "tahunPembuatan" to data.tahunPembuatan,
+                        "warnaKendaraan" to data.warnaKendaraan,
+                        "namaModel" to data.namaModel,
+                        "namaJenis" to data.namaJenis,
+                        "warnaTnkb" to data.warnaTnkb,
+                        "njkb" to data.njkb,
+                        "bobot" to data.bobot,
+                        "dasarPkb" to data.dasarPkb,
+                        "lamaTunggakan" to data.lamaTunggakan,
+                        "totalPajakKendaraan" to data.totalPajakKendaraan,
+                        "pembayaranSebelumnya" to mapOf(
+                            "pokokBbnkb" to data.pokokBbnkbSebelumnya,
+                            "pokokBbnkbOpsen" to data.pokokBbnkbOpsenSebelumnya,
+                            "dendaBbnkb" to data.dendaBbnkbSebelumnya,
+                            "dendaBbnkbOpsen" to data.dendaBbnkbOpsenSebelumnya,
+                            "pokokPkb" to data.pokokPkbSebelumnya,
+                            "pokokPkbOpsen" to data.pokokPkbOpsenSebelumnya,
+                            "dendaPkb" to data.dendaPkbSebelumnya,
+                            "dendaPkbOpsen" to data.dendaPkbOpsenSebelumnya,
+                            "pokokSwdk" to data.pokokSwdkSebelumnya,
+                            "dendaSwdk" to data.dendaSwdkSebelumnya,
+                            "stnk" to data.stnkSebelumnya,
+                            "tnkb" to data.tnkbSebelumnya,
+                            "total" to data.totalSebelumnya,
+                            "tanggalPembayaran" to data.tanggalPembayaranSebelumnya
+                        )
+                    ),
+                    waktuProses = data.tanggalPembayaranSebelumnya,
+                    keterangan = data.lamaTunggakan,
+                    isFiveYear = false,
+                    isBlocked = false,
+                    blockedDescription = "",
+                    isCompany = false,
+                    canBePaid = true,
+                    infoTransaksi = InfoTransaksi(
+                        kendaraanMilik = "1",
+                        waktuTransaksi = data.tanggalPembayaranSebelumnya,
+                        waktuKadaluarsa = "",
+                        durasiKadaluarsa = 0,
+                        waktuTunggu = "",
+                        durasiTunggu = 0,
+                        waktuTungguPembayaran = "",
+                        durasiTungguPembayaran = 0,
+                        expiredVerificationTime = null,
+                        kodeBayar = "",
+                        nominalPembayaran = totalValue,
+                        status = "success",
+                        ableToPaymentChecking = true,
+                        institution = "SAMSAT RIAU",
+                        institutionGateway = "SAMSAT RIAU"
+                    ),
+                    isCutOff = false,
+                    availablePaymentMethods = AvailablePaymentMethods(
+                        kodeBayar = false,
+                        qris = true,
+                        va = true,
+                        finpay = false
+                    ),
+                    masaPajak = MasaPajak(
+                        tanggalJatuhTempoSebelumnya = data.tanggalJatuhTempo,
+                        tanggalBerlakuSampai = data.tanggalStnk
+                    )
+                )
+            )
+        } else {
+            JabarPajakResponse(
+                status = false,
+                message = riauResponse.message ?: "Data tidak ditemukan",
+                code = "400",
                 data = null
             )
         }
@@ -878,11 +996,12 @@ class VehicleDetailViewModel @Inject constructor(
         try {
             val result = repository.getUniversalVehicleInfo(provinceCode, headPlat, bodyPlat, tailPlat, noRangka, noNik)
             if (result.isSuccess) {
-                val response = result.getOrNull()!!
-                if (response.data != null) {
-                    _uiState.value = VehicleDetailUiState.Success(response)
+                val universalResponse = result.getOrNull()!!
+                val convertedData = convertUniversalToJabar(universalResponse, provinceCode)
+                if (convertedData.data != null) {
+                    _uiState.value = VehicleDetailUiState.Success(convertedData)
                 } else {
-                    _uiState.value = VehicleDetailUiState.Error(response.message ?: "Data kendaraan tidak ditemukan")
+                    _uiState.value = VehicleDetailUiState.Error(convertedData.message ?: "Data kendaraan tidak ditemukan")
                 }
             } else {
                 _uiState.value = VehicleDetailUiState.Error(result.exceptionOrNull()?.message ?: "Gagal memuat data")
@@ -893,51 +1012,76 @@ class VehicleDetailViewModel @Inject constructor(
         }
     }
     
-    private fun convertSumbarToJabar(sumbarResponse: SumbarPajakResponse): JabarPajakResponse {
-        val data = sumbarResponse.data
-        return if (sumbarResponse.success && data != null) {
-            val totalValue = data.jumlah
-            
+    private fun convertUniversalToJabar(universalResponse: UniversalPajakResponse, region: String): JabarPajakResponse {
+        val data = universalResponse.data
+        return if (universalResponse.success && data != null) {
+            val pkbValue = data.pkbLama
+            val dendaPkbValue = data.dendaPkbLama
+            val opsenValue = data.opsenPkb
+            val dendaOpsenValue = data.dendaOpsenPkb
+            val swdklljValue = data.pokokSw
+            val dendaSwValue = data.totalDendaSw
+            val totalValue = data.jumlahTotal
+
             JabarPajakResponse(
                 status = true,
-                message = "Data ditemukan",
+                message = universalResponse.message ?: "Data ditemukan",
                 code = "200",
                 data = JabarPajakData(
                     namaMerk = data.merek,
-                    jenis = "Kendaraan",
-                    tahunBuatan = data.tahun,
+                    jenis = data.model,
+                    tahunBuatan = data.thBuatan,
                     milikKe = "1",
-                    namaModel = data.tipe,
+                    namaModel = data.model,
                     warna = data.warna,
-                    noPolisi = data.tnkb,
+                    noPolisi = data.nopol,
                     infoPkbPnpb = InfoPkbPnpb(
-                        tanggalPajak = data.tglPajak,
-                        tanggalStnk = data.tglStnk,
-                        wilayah = "SUMBAR"
+                        tanggalPajak = data.akhirPkb,
+                        tanggalStnk = data.akhirStnkb,
+                        wilayah = region
                     ),
                     infoPembayaran = InfoPembayaran(
-                        pkb = TaxDetail(pokok = data.pkbPokok, denda = data.pkbDenda),
-                        opsen = TaxDetail(pokok = data.opsPkbPokok, denda = data.opsPkbDenda),
-                        swdkllj = TaxDetail(pokok = data.swdklljPokok, denda = data.swdklljDenda),
-                        pnpb = PnpbDetail(stnk = data.admStnk, tnkb = data.admTnkb),
-                        jumlah = data.jumlah
+                        pkb = TaxDetail(pokok = pkbValue, denda = dendaPkbValue),
+                        opsen = TaxDetail(pokok = opsenValue, denda = dendaOpsenValue),
+                        swdkllj = TaxDetail(pokok = swdklljValue, denda = dendaSwValue),
+                        pnpb = PnpbDetail(stnk = data.pnbpStnk, tnkb = data.pnbpPlat),
+                        jumlah = totalValue
                     ),
                     infoKendaraan = mapOf(
-                        "tnkb" to data.tnkb,
-                        "merek" to data.merek,
-                        "tipe" to data.tipe,
-                        "tahun" to data.tahun,
+                        "merk" to data.merek,
+                        "model" to data.model,
+                        "tahun" to data.thBuatan,
                         "warna" to data.warna,
-                        "statusBlokir" to data.statusBlokir,
-                        "keterangan" to data.keterangan
+                        "warnaPlat" to data.warnaPlat,
+                        "jumlahCc" to data.jumlahCc,
+                        "bbm" to data.bbm,
+                        "noRangka" to data.noRangka,
+                        "noMesin" to data.noMesin,
+                        "nama" to data.nama,
+                        "akhirPkb" to data.akhirPkb,
+                        "akhirStnkb" to data.akhirStnkb,
+                        "bbnPok" to data.bbnPok,
+                        "pkbLama" to data.pkbLama,
+                        "dendaPkbLama" to data.dendaPkbLama,
+                        "beaPkb" to data.beaPkb,
+                        "dendaBeaPkb" to data.dendaBeaPkb,
+                        "opsenPkb" to data.opsenPkb,
+                        "dendaOpsenPkb" to data.dendaOpsenPkb,
+                        "pokokSw" to data.pokokSw,
+                        "totalTgkSw" to data.totalTgkSw,
+                        "totalDendaSw" to data.totalDendaSw,
+                        "pnbpBpkb" to data.pnbpBpkb,
+                        "pnbpStnk" to data.pnbpStnk,
+                        "pnbpPlat" to data.pnbpPlat,
+                        "jumlahTotal" to data.jumlahTotal
                     ),
                     waktuProses = "",
-                    keterangan = data.keterangan,
+                    keterangan = universalResponse.message ?: "Data ditemukan",
                     isFiveYear = false,
-                    isBlocked = data.statusBlokir != "-",
-                    blockedDescription = if (data.statusBlokir != "-") "Kendaraan dalam status blokir" else "",
+                    isBlocked = false,
+                    blockedDescription = "",
                     isCompany = false,
-                    canBePaid = data.statusBlokir == "-",
+                    canBePaid = true,
                     infoTransaksi = InfoTransaksi(
                         kendaraanMilik = "1",
                         waktuTransaksi = "",
@@ -951,128 +1095,9 @@ class VehicleDetailViewModel @Inject constructor(
                         kodeBayar = "",
                         nominalPembayaran = totalValue,
                         status = "success",
-                        ableToPaymentChecking = data.statusBlokir == "-",
-                        institution = "SAMSAT SUMBAR",
-                        institutionGateway = "SAMSAT SUMBAR"
-                    ),
-                    isCutOff = false,
-                    availablePaymentMethods = AvailablePaymentMethods(
-                        kodeBayar = false,
-                        qris = true,
-                        va = true,
-                        finpay = false
-                    ),
-                    masaPajak = MasaPajak(
-                        tanggalJatuhTempoSebelumnya = data.tglPajak,
-                        tanggalBerlakuSampai = data.tglStnk
-                    )
-                )
-            )
-        } else {
-            JabarPajakResponse(
-                status = false,
-                message = sumbarResponse.message ?: "Data tidak ditemukan",
-                code = "400",
-                data = null
-            )
-        }
-    }
-    
-    private fun convertRiauToJabar(riauResponse: RiauPajakResponse): JabarPajakResponse {
-        val data = riauResponse.data
-        return if (riauResponse.success && data != null) {
-            val totalValue = data.totalPajakKendaraan
-            
-            JabarPajakResponse(
-                status = true,
-                message = "Data ditemukan",
-                code = "200",
-                data = JabarPajakData(
-                    namaMerk = data.merekKendaraan,
-                    jenis = data.namaJenis,
-                    tahunBuatan = data.tahunPembuatan,
-                    milikKe = "1",
-                    namaModel = data.namaModel,
-                    warna = data.warnaKendaraan,
-                    noPolisi = data.nopol,
-                    infoPkbPnpb = InfoPkbPnpb(
-                        tanggalPajak = data.tanggalJatuhTempo,
-                        tanggalStnk = data.tanggalStnk,
-                        wilayah = "RIAU"
-                    ),
-                    infoPembayaran = InfoPembayaran(
-                        pkb = TaxDetail(
-                            pokok = data.totalPokokPkb,
-                            denda = data.totalDendaPkb
-                        ),
-                        opsen = TaxDetail(
-                            pokok = data.totalPokokPkbOpsen,
-                            denda = data.totalDendaPkbOpsen
-                        ),
-                        swdkllj = TaxDetail(
-                            pokok = data.totalPokokSwdk,
-                            denda = data.totalDendaSwdk
-                        ),
-                        pnpb = PnpbDetail(stnk = data.stnk, tnkb = data.tnkb),
-                        jumlah = data.totalPajakKendaraan
-                    ),
-                    infoKendaraan = mapOf(
-                        "nopol" to data.nopol,
-                        "namaPemilik" to data.namaPemilik,
-                        "alamat" to data.alamat,
-                        "merekKendaraan" to data.merekKendaraan,
-                        "typeKendaraan" to data.typeKendaraan,
-                        "golonganKendaraan" to data.golonganKendaraan,
-                        "tahunPembuatan" to data.tahunPembuatan,
-                        "warnaKendaraan" to data.warnaKendaraan,
-                        "namaModel" to data.namaModel,
-                        "namaJenis" to data.namaJenis,
-                        "warnaTnkb" to data.warnaTnkb,
-                        "njkb" to data.njkb,
-                        "bobot" to data.bobot,
-                        "dasarPkb" to data.dasarPkb,
-                        "lamaTunggakan" to data.lamaTunggakan,
-                        "totalPajakKendaraan" to data.totalPajakKendaraan,
-                        "pembayaranSebelumnya" to mapOf(
-                            "pokokBbnkb" to data.pokokBbnkbSebelumnya,
-                            "pokokBbnkbOpsen" to data.pokokBbnkbOpsenSebelumnya,
-                            "dendaBbnkb" to data.dendaBbnkbSebelumnya,
-                            "dendaBbnkbOpsen" to data.dendaBbnkbOpsenSebelumnya,
-                            "pokokPkb" to data.pokokPkbSebelumnya,
-                            "pokokPkbOpsen" to data.pokokPkbOpsenSebelumnya,
-                            "dendaPkb" to data.dendaPkbSebelumnya,
-                            "dendaPkbOpsen" to data.dendaPkbOpsenSebelumnya,
-                            "pokokSwdk" to data.pokokSwdkSebelumnya,
-                            "dendaSwdk" to data.dendaSwdkSebelumnya,
-                            "stnk" to data.stnkSebelumnya,
-                            "tnkb" to data.tnkbSebelumnya,
-                            "total" to data.totalSebelumnya,
-                            "tanggalPembayaran" to data.tanggalPembayaranSebelumnya
-                        )
-                    ),
-                    waktuProses = data.tanggalPembayaranSebelumnya,
-                    keterangan = data.lamaTunggakan,
-                    isFiveYear = false,
-                    isBlocked = false,
-                    blockedDescription = "",
-                    isCompany = false,
-                    canBePaid = true,
-                    infoTransaksi = InfoTransaksi(
-                        kendaraanMilik = "1",
-                        waktuTransaksi = data.tanggalPembayaranSebelumnya,
-                        waktuKadaluarsa = "",
-                        durasiKadaluarsa = 0,
-                        waktuTunggu = "",
-                        durasiTunggu = 0,
-                        waktuTungguPembayaran = "",
-                        durasiTungguPembayaran = 0,
-                        expiredVerificationTime = null,
-                        kodeBayar = "",
-                        nominalPembayaran = totalValue,
-                        status = "success",
                         ableToPaymentChecking = true,
-                        institution = "SAMSAT RIAU",
-                        institutionGateway = "SAMSAT RIAU"
+                        institution = "SAMSAT $region",
+                        institutionGateway = "SAMSAT $region"
                     ),
                     isCutOff = false,
                     availablePaymentMethods = AvailablePaymentMethods(
@@ -1082,15 +1107,15 @@ class VehicleDetailViewModel @Inject constructor(
                         finpay = false
                     ),
                     masaPajak = MasaPajak(
-                        tanggalJatuhTempoSebelumnya = data.tanggalJatuhTempo,
-                        tanggalBerlakuSampai = data.tanggalStnk
+                        tanggalJatuhTempoSebelumnya = data.akhirPkb,
+                        tanggalBerlakuSampai = data.akhirStnkb
                     )
                 )
             )
         } else {
             JabarPajakResponse(
                 status = false,
-                message = riauResponse.message ?: "Data tidak ditemukan",
+                message = universalResponse.message ?: "Data tidak ditemukan",
                 code = "400",
                 data = null
             )

@@ -3,16 +3,6 @@ package com.paondev.infoplat.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.paondev.infoplat.data.Province
-import com.paondev.infoplat.data.allProvinces
-import com.paondev.infoplat.data.api.BantenPajakResponse
-import com.paondev.infoplat.data.api.BaliPajakResponse
-import com.paondev.infoplat.data.api.BangkaBelitungPajakResponse
-import com.paondev.infoplat.data.api.LampungPajakResponse
-import com.paondev.infoplat.data.api.RiauPajakResponse
-import com.paondev.infoplat.data.api.SumbarPajakResponse
-import com.paondev.infoplat.data.api.OcrResponse
-import com.paondev.infoplat.data.api.DiypPajakResponse
-import com.paondev.infoplat.data.api.JabarPajakResponse
 import com.paondev.infoplat.data.api.JatimCaptchaResponse
 import com.paondev.infoplat.data.api.JatimPkbResponse
 import com.paondev.infoplat.data.repository.ProvinceRepository
@@ -97,21 +87,6 @@ class ProvinceViewModel @Inject constructor(
             _isLoading.value = false
         }
     }
-
-    suspend fun getVehicleInfo(
-        provinceCode: String,
-        headPlat: String,
-        bodyPlat: String,
-        tailPlat: String
-    ): Result<JabarPajakResponse> {
-        return repository.getVehicleInfo(
-            provinceCode = provinceCode,
-            headPlat = headPlat,
-            bodyPlat = bodyPlat,
-            tailPlat = tailPlat
-        )
-    }
-
     suspend fun getJatimCaptcha(): Result<JatimCaptchaResponse> {
         _isCaptchaLoading.value = true
         _captchaError.value = null
@@ -150,123 +125,8 @@ class ProvinceViewModel @Inject constructor(
 
         return result
     }
-
-    suspend fun getDiypVehicleInfo(
-        provinceCode: String,
-        headPlat: String,
-        bodyPlat: String,
-        tailPlat: String
-    ): Result<DiypPajakResponse> {
-        return repository.getDiypVehicleInfo(
-            provinceCode = provinceCode,
-            headPlat = headPlat,
-            bodyPlat = bodyPlat,
-            tailPlat = tailPlat
-        )
-    }
-
-    suspend fun getBantenVehicleInfo(
-        provinceCode: String,
-        headPlat: String,
-        bodyPlat: String,
-        tailPlat: String
-    ): Result<BantenPajakResponse> {
-        return repository.getBantenVehicleInfo(
-            provinceCode = provinceCode,
-            headPlat = headPlat,
-            bodyPlat = bodyPlat,
-            tailPlat = tailPlat
-        )
-    }
-
-    suspend fun getBaliVehicleInfo(
-        provinceCode: String,
-        headPlat: String,
-        bodyPlat: String,
-        tailPlat: String,
-        noRangka: String
-    ): Result<BaliPajakResponse> {
-        return repository.getBaliVehicleInfo(
-            provinceCode = provinceCode,
-            headPlat = headPlat,
-            bodyPlat = bodyPlat,
-            tailPlat = tailPlat,
-            noRangka = noRangka
-        )
-    }
-
-    suspend fun getBangkaBelitungVehicleInfo(
-        provinceCode: String,
-        headPlat: String,
-        bodyPlat: String,
-        tailPlat: String
-    ): Result<BangkaBelitungPajakResponse> {
-        return repository.getBangkaBelitungVehicleInfo(
-            provinceCode = provinceCode,
-            headPlat = headPlat,
-            bodyPlat = bodyPlat,
-            tailPlat = tailPlat
-        )
-    }
-
-    suspend fun getLampungVehicleInfo(
-        provinceCode: String,
-        headPlat: String,
-        bodyPlat: String,
-        tailPlat: String,
-        noRangka: String
-    ): Result<LampungPajakResponse> {
-        return repository.getLampungVehicleInfo(
-            provinceCode = provinceCode,
-            headPlat = headPlat,
-            bodyPlat = bodyPlat,
-            tailPlat = tailPlat,
-            noRangka = noRangka
-        )
-    }
-
-    suspend fun getRiauVehicleInfo(
-        provinceCode: String,
-        headPlat: String,
-        bodyPlat: String,
-        tailPlat: String,
-        noRangka: String
-    ): Result<RiauPajakResponse> {
-        return repository.getRiauVehicleInfo(
-            provinceCode = provinceCode,
-            headPlat = headPlat,
-            bodyPlat = bodyPlat,
-            tailPlat = tailPlat,
-            noRangka = noRangka
-        )
-    }
-
-    suspend fun getSumbarVehicleInfo(
-        provinceCode: String,
-        headPlat: String,
-        bodyPlat: String,
-        tailPlat: String,
-        noRangka: String
-    ): Result<SumbarPajakResponse> {
-        return repository.getSumbarVehicleInfo(
-            provinceCode = provinceCode,
-            headPlat = headPlat,
-            bodyPlat = bodyPlat,
-            tailPlat = tailPlat,
-            noRangka = noRangka
-        )
-    }
-
-    suspend fun solveOcr(image: String): Result<OcrResponse> {
-        return repository.solveOcr(image)
-    }
-
     fun clearCaptchaData() {
         _captchaData.value = null
-    }
-
-    fun setCaptchaData(captchaResponse: com.paondev.infoplat.data.api.JatimCaptchaResponse) {
-        _captchaData.value = captchaResponse
     }
 
     fun clearCaptchaError() {

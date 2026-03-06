@@ -4,18 +4,14 @@ import androidx.compose.ui.text.toUpperCase
 import com.google.gson.Gson
 import com.paondev.infoplat.BuildConfig
 import com.paondev.infoplat.data.Province
-import com.paondev.infoplat.data.api.BantenPajakRequest
 import com.paondev.infoplat.data.api.BantenPajakResponse
-import com.paondev.infoplat.data.api.BaliPajakRequest
 import com.paondev.infoplat.data.api.BaliPajakResponse
-import com.paondev.infoplat.data.api.BangkaBelitungPajakRequest
 import com.paondev.infoplat.data.api.BangkaBelitungPajakResponse
-import com.paondev.infoplat.data.api.LampungPajakRequest
 import com.paondev.infoplat.data.api.LampungPajakResponse
-import com.paondev.infoplat.data.api.RiauPajakRequest
 import com.paondev.infoplat.data.api.RiauPajakResponse
 import com.paondev.infoplat.data.api.SumbarPajakResponse
 import com.paondev.infoplat.data.api.UniversalPajakRequest
+import com.paondev.infoplat.data.api.UniversalPajakResponse
 import com.paondev.infoplat.data.api.OcrRequest
 import com.paondev.infoplat.data.api.OcrResponse
 import com.paondev.infoplat.data.api.DiypPajakResponse
@@ -264,7 +260,7 @@ class ProvinceRepository(
             try {
                 if (provinceCode == "BNTN") {
                     val noPolisi = "$headPlat $bodyPlat $tailPlat".trim()
-                    val request = BantenPajakRequest(
+                    val request = UniversalPajakRequest(
                         kode = "BNTN",
                         headPlat = headPlat.uppercase(Locale.ROOT),
                         bodyPlat = bodyPlat,
@@ -318,7 +314,7 @@ class ProvinceRepository(
             try {
                 if (provinceCode == "BALI") {
                     val noPolisi = "$headPlat $bodyPlat $tailPlat".trim()
-                    val request = BaliPajakRequest(
+                    val request = UniversalPajakRequest(
                         kode = "BALI",
                         headPlat = headPlat.uppercase(Locale.ROOT),
                         bodyPlat = bodyPlat,
@@ -372,7 +368,7 @@ class ProvinceRepository(
             try {
                 if (provinceCode == "BNKLU") {
                     val noPolisi = "$headPlat $bodyPlat $tailPlat".trim()
-                    val request = BangkaBelitungPajakRequest(
+                    val request = UniversalPajakRequest(
                         kode = "BNKLU",
                         headPlat = headPlat.uppercase(Locale.ROOT),
                         bodyPlat = bodyPlat,
@@ -426,7 +422,7 @@ class ProvinceRepository(
             try {
                 if (provinceCode == "BDRLMP") {
                     val noPolisi = "$headPlat $bodyPlat $tailPlat".trim()
-                    val request = LampungPajakRequest(
+                    val request = UniversalPajakRequest(
                         kode = "BDRLMP",
                         headPlat = headPlat.uppercase(Locale.ROOT),
                         bodyPlat = bodyPlat,
@@ -480,7 +476,7 @@ class ProvinceRepository(
             try {
                 if (provinceCode == "RIAU") {
                     val noPolisi = "$headPlat $bodyPlat $tailPlat".trim()
-                    val request = RiauPajakRequest(
+                    val request =  UniversalPajakRequest(
                         kode = "RIAU",
                         headPlat = headPlat.uppercase(Locale.ROOT),
                         bodyPlat = bodyPlat,
@@ -529,7 +525,7 @@ class ProvinceRepository(
         tailPlat: String,
         noRangka: String,
         noNik: String = ""
-    ): Result<SumbarPajakResponse> {
+    ): Result<UniversalPajakResponse> {
         return withContext(Dispatchers.IO) {
             try {
                 if (provinceCode == "SUMBAR") {
@@ -583,7 +579,7 @@ class ProvinceRepository(
         tailPlat: String,
         noRangka: String = "",
         noNik: String = ""
-    ): Result<JabarPajakResponse> {
+    ): Result<UniversalPajakResponse> {
         return withContext(Dispatchers.IO) {
             try {
                 val noPolisi = "$headPlat $bodyPlat $tailPlat".trim()
@@ -603,8 +599,8 @@ class ProvinceRepository(
                 if (response.isSuccessful && response.body() != null) {
                     val responseBody = response.body()!!
 
-                    // Save to history if data is found (status true with data)
-                    if (responseBody.status && responseBody.data != null) {
+                    // Save to history if data is found (success true with data)
+                    if (responseBody.success && responseBody.data != null) {
                         val gson = Gson()
                         val jsonData = gson.toJson(responseBody)
                         val history = History(

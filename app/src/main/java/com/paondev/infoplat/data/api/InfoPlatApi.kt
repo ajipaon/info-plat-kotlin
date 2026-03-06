@@ -69,7 +69,7 @@ interface InfoPlatApi {
     @POST
     suspend fun getBantenPajakInfo(
         @Url url: String,
-        @Body request: BantenPajakRequest,
+        @Body request: UniversalPajakRequest,
         @Header("Content-Type") contentType: String,
         @Header("x-token") authorization: String
     ): Response<BantenPajakResponse>
@@ -77,28 +77,28 @@ interface InfoPlatApi {
     @POST
     suspend fun getBaliPajakInfo(
         @Url url: String,
-        @Body request: BaliPajakRequest,
+        @Body request: UniversalPajakRequest,
         @Header("x-token") authorization: String
     ): Response<BaliPajakResponse>
 
     @POST
     suspend fun getBangkaBelitungPajakInfo(
         @Url url: String,
-        @Body request: BangkaBelitungPajakRequest,
+        @Body request: UniversalPajakRequest,
         @Header("x-token") authorization: String
     ): Response<BangkaBelitungPajakResponse>
 
     @POST
     suspend fun getLampungPajakInfo(
         @Url url: String,
-        @Body request: LampungPajakRequest,
+        @Body request: UniversalPajakRequest,
         @Header("x-token") authorization: String
     ): Response<LampungPajakResponse>
 
     @POST
     suspend fun getRiauPajakInfo(
         @Url url: String,
-        @Body request: RiauPajakRequest,
+        @Body request:  UniversalPajakRequest,
         @Header("x-token") authorization: String
     ): Response<RiauPajakResponse>
 
@@ -106,8 +106,8 @@ interface InfoPlatApi {
     suspend fun getSumbarPajakInfo(
         @Url url: String,
         @Body request: UniversalPajakRequest,
-        @Header("x-token") authorization: String
-    ): Response<SumbarPajakResponse>
+        @Header("Authorization") authorization: String
+    ): Response<UniversalPajakResponse>
 
     @POST
     suspend fun solveOcr(
@@ -119,6 +119,6 @@ interface InfoPlatApi {
     suspend fun getUniversalPajakInfo(
         @Url url: String,
         @Body request: UniversalPajakRequest,
-        @Header("x-token") authorization: String
-    ): Response<JabarPajakResponse>
+        @Header("Authorization") authorization: String
+    ): Response<UniversalPajakResponse>
 }
