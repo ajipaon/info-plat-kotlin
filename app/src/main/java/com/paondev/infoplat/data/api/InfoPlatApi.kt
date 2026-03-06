@@ -70,37 +70,43 @@ interface InfoPlatApi {
     suspend fun getBantenPajakInfo(
         @Url url: String,
         @Body request: BantenPajakRequest,
-        @Header("Content-Type") contentType: String
+        @Header("Content-Type") contentType: String,
+        @Header("x-token") authorization: String
     ): Response<BantenPajakResponse>
 
     @POST
     suspend fun getBaliPajakInfo(
         @Url url: String,
-        @Body request: BaliPajakRequest
+        @Body request: BaliPajakRequest,
+        @Header("x-token") authorization: String
     ): Response<BaliPajakResponse>
 
     @POST
     suspend fun getBangkaBelitungPajakInfo(
         @Url url: String,
-        @Body request: BangkaBelitungPajakRequest
+        @Body request: BangkaBelitungPajakRequest,
+        @Header("x-token") authorization: String
     ): Response<BangkaBelitungPajakResponse>
 
     @POST
     suspend fun getLampungPajakInfo(
         @Url url: String,
-        @Body request: LampungPajakRequest
+        @Body request: LampungPajakRequest,
+        @Header("x-token") authorization: String
     ): Response<LampungPajakResponse>
 
     @POST
     suspend fun getRiauPajakInfo(
         @Url url: String,
-        @Body request: RiauPajakRequest
+        @Body request: RiauPajakRequest,
+        @Header("x-token") authorization: String
     ): Response<RiauPajakResponse>
 
     @POST
     suspend fun getSumbarPajakInfo(
         @Url url: String,
-        @Body request: UniversalPajakRequest
+        @Body request: UniversalPajakRequest,
+        @Header("x-token") authorization: String
     ): Response<SumbarPajakResponse>
 
     @POST
@@ -112,6 +118,7 @@ interface InfoPlatApi {
     @POST
     suspend fun getUniversalPajakInfo(
         @Url url: String,
-        @Body request: UniversalPajakRequest
+        @Body request: UniversalPajakRequest,
+        @Header("x-token") authorization: String
     ): Response<JabarPajakResponse>
 }

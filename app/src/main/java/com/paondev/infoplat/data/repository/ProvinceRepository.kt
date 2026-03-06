@@ -31,8 +31,10 @@ import com.paondev.infoplat.data.locale.InfoPlatDao
 import com.paondev.infoplat.di.JatimApi
 import com.paondev.infoplat.di.MainApi
 import com.paondev.infoplat.model.History
+import com.paondev.infoplat.utils.generateToket
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.security.MessageDigest
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
@@ -272,7 +274,8 @@ class ProvinceRepository(
                     val response = api.getBantenPajakInfo(
                         url = BuildConfig.API_URL_INFO_PLAT,
                         request = request,
-                        contentType = "application/json"
+                        contentType = "application/json",
+                        authorization = generateToket(headPlat, bodyPlat, tailPlat)
                     )
                     if (response.isSuccessful && response.body() != null) {
                         val responseBody = response.body()!!
@@ -325,7 +328,8 @@ class ProvinceRepository(
                     )
                     val response = api.getBaliPajakInfo(
                         url = BuildConfig.API_URL_INFO_PLAT,
-                        request = request
+                        request = request,
+                        authorization = generateToket(headPlat, bodyPlat, tailPlat)
                     )
                     if (response.isSuccessful && response.body() != null) {
                         val responseBody = response.body()!!
@@ -378,7 +382,8 @@ class ProvinceRepository(
                     )
                     val response = api.getBangkaBelitungPajakInfo(
                         url = BuildConfig.API_URL_INFO_PLAT,
-                        request = request
+                        request = request,
+                        authorization = generateToket(headPlat, bodyPlat, tailPlat)
                     )
                     if (response.isSuccessful && response.body() != null) {
                         val responseBody = response.body()!!
@@ -431,7 +436,8 @@ class ProvinceRepository(
                     )
                     val response = api.getLampungPajakInfo(
                         url = BuildConfig.API_URL_INFO_PLAT,
-                        request = request
+                        request = request,
+                        authorization = generateToket(headPlat, bodyPlat, tailPlat)
                     )
                     if (response.isSuccessful && response.body() != null) {
                         val responseBody = response.body()!!
@@ -484,7 +490,8 @@ class ProvinceRepository(
                     )
                     val response = api.getRiauPajakInfo(
                         url = BuildConfig.API_URL_INFO_PLAT,
-                        request = request
+                        request = request,
+                        authorization = generateToket(headPlat, bodyPlat, tailPlat)
                     )
                     if (response.isSuccessful && response.body() != null) {
                         val responseBody = response.body()!!
@@ -537,7 +544,8 @@ class ProvinceRepository(
                     )
                     val response = api.getSumbarPajakInfo(
                         url = BuildConfig.API_URL_INFO_PLAT,
-                        request = request
+                        request = request,
+                        authorization = generateToket(headPlat, bodyPlat, tailPlat)
                     )
                     if (response.isSuccessful && response.body() != null) {
                         val responseBody = response.body()!!
@@ -589,7 +597,8 @@ class ProvinceRepository(
                 )
                 val response = api.getUniversalPajakInfo(
                     url = BuildConfig.API_URL_INFO_PLAT,
-                    request = request
+                    request = request,
+                    authorization = generateToket(headPlat, bodyPlat, tailPlat)
                 )
                 if (response.isSuccessful && response.body() != null) {
                     val responseBody = response.body()!!
