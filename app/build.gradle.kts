@@ -46,6 +46,7 @@ android {
         val JatimPajakApiUrl = getProps("JATIM_PAJAK_API_URL")
         val DiypPajakApiUrl = getProps("DIYP_PAJAK_API_URL")
         val apiUrlInfoPlat = getProps("API_URL_INFO_PLAT")
+        val apiUrlInfoPlatOcr = getProps("API_URL_INFO_PLAT_OCR")
 
         buildConfigField("String", "JABAR_PAJAK_API_URL", "\"$jabarPajakApiUrl\"")
         buildConfigField("String", "JABAR_PAJAK_API_KEY", "\"$jabarPajakApiKey\"")
@@ -56,6 +57,7 @@ android {
         buildConfigField("String", "JATIM_PAJAK_API_URL", "\"$JatimPajakApiUrl\"")
         buildConfigField("String", "DIYP_PAJAK_API_URL", "\"$DiypPajakApiUrl\"")
         buildConfigField("String", "API_URL_INFO_PLAT", "\"$apiUrlInfoPlat\"")
+        buildConfigField("String", "API_URL_INFO_PLAT_OCR", "\"$apiUrlInfoPlatOcr\"")
     }
 
     buildTypes {

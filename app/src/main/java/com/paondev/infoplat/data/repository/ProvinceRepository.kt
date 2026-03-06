@@ -63,7 +63,12 @@ class ProvinceRepository(
     suspend fun getJatimCaptcha(): Result<JatimCaptchaResponse> {
         return withContext(Dispatchers.IO) {
             try {
-                val response = jatimApi.getJatimCaptcha()
+                val response = jatimApi.getJatimCaptcha(
+                    url = BuildConfig.JATIM_CAPTCHA_URL,
+                    origin = "https://bapenda.jatimprov.go.id",
+                    referer = "https://bapenda.jatimprov.go.id/info/pkb",
+                    userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+                )
                 if (response.isSuccessful && response.body() != null) {
                     Result.success(response.body()!!)
                 } else {
@@ -80,7 +85,7 @@ class ProvinceRepository(
             try {
                 val request = OcrRequest(image = image)
                 val response = api.solveOcr(
-                    url = "https://info-plat.ajisetiawan883.workers.dev/api/ocr",
+                    url = BuildConfig.API_URL_INFO_PLAT_OCR,
                     request = request
                 )
                 if (response.isSuccessful && response.body() != null) {
@@ -109,10 +114,20 @@ class ProvinceRepository(
                     nopol = nopol.uppercase(Locale.ROOT),
                     norang = norang
                 )
-                val response = jatimApi.verifyJatimCaptcha(request = request)
+                val response = jatimApi.verifyJatimCaptcha(
+                    url = BuildConfig.JATIM_PAJAK_API_URL,
+                    request = request,
+                    accept = "application/json",
+                    acceptLanguage = "en-US,en;q=0.6",
+                    origin = "https://bapenda.jatimprov.go.id",
+                    referer = "https://bapenda.jatimprov.go.id/info/pkb",
+                    userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+                    appToken = "bapenda-jatim-info-layanan-2025",
+                    requestedWith = "XMLHttpRequest",
+                )
                 if (response.isSuccessful && response.body() != null) {
                     val responseBody = response.body()!!
-                    
+
                     // Save to history if successful
                     if (responseBody.status == "success" && responseBody.data != null) {
                         val gson = Gson()
@@ -125,7 +140,7 @@ class ProvinceRepository(
                         )
                         dao.insertHistory(history)
                     }
-                    
+
                     Result.success(responseBody)
                 } else {
                     Result.failure(Exception("Failed to verify captcha: ${response.code()}"))
@@ -153,11 +168,15 @@ class ProvinceRepository(
                     )
                     val response = api.getJabarPajakInfo(
                         url = BuildConfig.JABAR_PAJAK_API_URL,
-                        request = request
+                        request = request,
+                        signature = BuildConfig.JABAR_PAJAK_X_SIGNATURE,
+                        localization = BuildConfig.JABAR_PAJAK_X_LOCALIZATION,
+                        apiKey = BuildConfig.JABAR_PAJAK_API_KEY,
+                        userAgent = "Dart/3.9 (dart:io)"
                     )
                     if (response.isSuccessful && response.body() != null) {
                         val responseBody = response.body()!!
-                        
+
                         // Save to history
                         val gson = Gson()
                         val jsonData = gson.toJson(responseBody)
@@ -168,7 +187,7 @@ class ProvinceRepository(
                             data = jsonData
                         )
                         dao.insertHistory(history)
-                        
+
                         Result.success(responseBody)
                     } else {
                         Result.failure(Exception("Failed to get vehicle info: ${response.code()}"))
@@ -192,13 +211,21 @@ class ProvinceRepository(
             try {
                 if (provinceCode == "DIY") {
                     val noPolisi = "$headPlat $bodyPlat $tailPlat".trim()
-                    val response = api.getDiypPajakInfo(
+                    val response = api.getDiyPajakInfo(
                         nomer = bodyPlat.uppercase(Locale.ROOT),
-                        kodeBelakang = tailPlat.uppercase(Locale.ROOT)
+                        kodeBelakang = tailPlat.uppercase(Locale.ROOT),
+                        accept = "application/json, text/javascript, */*; q=0.01",
+                        acceptEncoding = "gzip, deflate, br, zstd",
+                        acceptLanguage = "en-US,en;q=0.6",
+                        contentType = "application/x-www-form-urlencoded; charset=UTF-8",
+                        origin = "https://samsatsleman.jogjaprov.go.id",
+                        referer = "https://samsatsleman.jogjaprov.go.id/cek/pajak",
+                        userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+                        requestedWith = "XMLHttpRequest"
                     )
                     if (response.isSuccessful && response.body() != null) {
                         val responseBody = response.body()!!
-                        
+
                         // Save to history if data is found (not null)
                         if (responseBody.status == "success" && responseBody.data != null) {
                             val gson = Gson()
@@ -211,7 +238,7 @@ class ProvinceRepository(
                             )
                             dao.insertHistory(history)
                         }
-                        
+
                         Result.success(responseBody)
                     } else {
                         Result.failure(Exception("Failed to get vehicle info: ${response.code()}"))
@@ -244,11 +271,12 @@ class ProvinceRepository(
                     )
                     val response = api.getBantenPajakInfo(
                         url = BuildConfig.API_URL_INFO_PLAT,
-                        request = request
+                        request = request,
+                        contentType = "application/json"
                     )
                     if (response.isSuccessful && response.body() != null) {
                         val responseBody = response.body()!!
-                        
+
                         // Save to history if data is found (success true with data)
                         if (responseBody.success && responseBody.data != null) {
                             val gson = Gson()
@@ -261,7 +289,7 @@ class ProvinceRepository(
                             )
                             dao.insertHistory(history)
                         }
-                        
+
                         Result.success(responseBody)
                     } else {
                         Result.failure(Exception("Failed to get vehicle info: ${response.code()}"))
@@ -301,7 +329,7 @@ class ProvinceRepository(
                     )
                     if (response.isSuccessful && response.body() != null) {
                         val responseBody = response.body()!!
-                        
+
                         // Save to history if data is found (success true with data)
                         if (responseBody.success && responseBody.data != null) {
                             val gson = Gson()
@@ -314,7 +342,7 @@ class ProvinceRepository(
                             )
                             dao.insertHistory(history)
                         }
-                        
+
                         Result.success(responseBody)
                     } else {
                         Result.failure(Exception("Failed to get vehicle info: ${response.code()}"))
@@ -354,7 +382,7 @@ class ProvinceRepository(
                     )
                     if (response.isSuccessful && response.body() != null) {
                         val responseBody = response.body()!!
-                        
+
                         // Save to history if data is found (success true with data)
                         if (responseBody.success && responseBody.data != null) {
                             val gson = Gson()
@@ -367,7 +395,7 @@ class ProvinceRepository(
                             )
                             dao.insertHistory(history)
                         }
-                        
+
                         Result.success(responseBody)
                     } else {
                         Result.failure(Exception("Failed to get vehicle info: ${response.code()}"))
@@ -407,7 +435,7 @@ class ProvinceRepository(
                     )
                     if (response.isSuccessful && response.body() != null) {
                         val responseBody = response.body()!!
-                        
+
                         // Save to history if data is found (success true with data)
                         if (responseBody.success && responseBody.data != null) {
                             val gson = Gson()
@@ -420,7 +448,7 @@ class ProvinceRepository(
                             )
                             dao.insertHistory(history)
                         }
-                        
+
                         Result.success(responseBody)
                     } else {
                         Result.failure(Exception("Failed to get vehicle info: ${response.code()}"))
@@ -460,7 +488,7 @@ class ProvinceRepository(
                     )
                     if (response.isSuccessful && response.body() != null) {
                         val responseBody = response.body()!!
-                        
+
                         // Save to history if data is found (success true with data)
                         if (responseBody.success && responseBody.data != null) {
                             val gson = Gson()
@@ -473,7 +501,7 @@ class ProvinceRepository(
                             )
                             dao.insertHistory(history)
                         }
-                        
+
                         Result.success(responseBody)
                     } else {
                         Result.failure(Exception("Failed to get vehicle info: ${response.code()}"))
@@ -513,7 +541,7 @@ class ProvinceRepository(
                     )
                     if (response.isSuccessful && response.body() != null) {
                         val responseBody = response.body()!!
-                        
+
                         // Save to history if data is found (success true with data)
                         if (responseBody.success && responseBody.data != null) {
                             val gson = Gson()
@@ -526,7 +554,7 @@ class ProvinceRepository(
                             )
                             dao.insertHistory(history)
                         }
-                        
+
                         Result.success(responseBody)
                     } else {
                         Result.failure(Exception("Failed to get vehicle info: ${response.code()}"))
@@ -565,7 +593,7 @@ class ProvinceRepository(
                 )
                 if (response.isSuccessful && response.body() != null) {
                     val responseBody = response.body()!!
-                    
+
                     // Save to history if data is found (status true with data)
                     if (responseBody.status && responseBody.data != null) {
                         val gson = Gson()
@@ -578,7 +606,7 @@ class ProvinceRepository(
                         )
                         dao.insertHistory(history)
                     }
-                    
+
                     Result.success(responseBody)
                 } else {
                     Result.failure(Exception("Failed to get vehicle info: ${response.code()}"))
