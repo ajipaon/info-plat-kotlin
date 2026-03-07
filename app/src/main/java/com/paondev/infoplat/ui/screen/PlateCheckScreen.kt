@@ -1,11 +1,21 @@
 package com.paondev.infoplat.ui.screen
 
-import android.util.Base64
-import android.graphics.BitmapFactory
-import androidx.compose.foundation.*
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -13,40 +23,29 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material3.*
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.NoPhotography
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.paondev.infoplat.data.api.BantenPajakResponse
-import com.paondev.infoplat.data.api.BaliPajakResponse
-import com.paondev.infoplat.data.api.BangkaBelitungPajakResponse
-import com.paondev.infoplat.data.api.LampungPajakResponse
-import com.paondev.infoplat.data.api.RiauPajakResponse
-import com.paondev.infoplat.data.api.SumbarPajakResponse
-import com.paondev.infoplat.data.api.OcrResponse
-import com.paondev.infoplat.data.api.DiypPajakData
-import com.paondev.infoplat.data.api.DiypPajakResponse
-import com.paondev.infoplat.data.api.JabarPajakData
-import com.paondev.infoplat.data.api.JabarPajakResponse
-import com.paondev.infoplat.data.api.InfoPkbPnpb
-import com.paondev.infoplat.data.api.InfoPembayaran
-import com.paondev.infoplat.data.api.TaxDetail
-import com.paondev.infoplat.data.api.PnpbDetail
-import com.paondev.infoplat.data.api.InfoTransaksi
-import com.paondev.infoplat.data.api.AvailablePaymentMethods
-import com.paondev.infoplat.data.api.MasaPajak
-import com.paondev.infoplat.data.api.JatimPkbResponse
-import com.paondev.infoplat.data.repository.ProvinceRepository
-import com.paondev.infoplat.ui.viewmodel.ProvinceViewModel
-import com.paondev.infoplat.ui.viewmodel.SearchHistoryViewModel
-import com.paondev.infoplat.navigation.VehicleDetailDestination
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -60,15 +59,35 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.google.gson.Gson
+import com.paondev.infoplat.data.api.AvailablePaymentMethods
+import com.paondev.infoplat.data.api.BaliPajakResponse
+import com.paondev.infoplat.data.api.BangkaBelitungPajakResponse
+import com.paondev.infoplat.data.api.BantenPajakResponse
+import com.paondev.infoplat.data.api.DiypPajakResponse
+import com.paondev.infoplat.data.api.InfoPembayaran
+import com.paondev.infoplat.data.api.InfoPkbPnpb
+import com.paondev.infoplat.data.api.InfoTransaksi
+import com.paondev.infoplat.data.api.JabarPajakData
+import com.paondev.infoplat.data.api.JabarPajakResponse
+import com.paondev.infoplat.data.api.LampungPajakResponse
+import com.paondev.infoplat.data.api.MasaPajak
+import com.paondev.infoplat.data.api.PnpbDetail
+import com.paondev.infoplat.data.api.RiauPajakResponse
+import com.paondev.infoplat.data.api.SumbarPajakResponse
+import com.paondev.infoplat.data.api.TaxDetail
 import com.paondev.infoplat.navigation.SearchHistoryDestination
+import com.paondev.infoplat.navigation.VehicleDetailDestination
+import com.paondev.infoplat.ui.components.LicensePlateInput
 import com.paondev.infoplat.ui.components.ProvinceSelectorCard
-import com.paondev.infoplat.ui.theme.*
+import com.paondev.infoplat.ui.viewmodel.ProvinceViewModel
+import com.paondev.infoplat.ui.viewmodel.SearchHistoryViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun PlateCheckScreen(
@@ -91,15 +110,24 @@ fun PlateCheckScreen(
     var captchaCode by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var selectedPlateCode by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
-    
+
     // Reset states when province changes
-    LaunchedEffect(selectedProvince?.kode) {
-        captchaCode = ""
-        noRangka = ""
-        noNik = ""
-        errorMessage = null
-    }
+//    LaunchedEffect(selectedProvince?.kode) {
+//        captchaCode = ""
+//        noRangka = ""
+//        noNik = ""
+//        errorMessage = null
+//        headPlat = ""
+//        selectedPlateCode = ""
+//
+//        // Auto-fill headPlat for single plate provinces
+//        if (selectedProvince?.plateCodes?.size == 1) {
+//            headPlat = selectedProvince!!.plateCodes[0]
+//            selectedPlateCode = selectedProvince!!.plateCodes[0]
+//        }
+//    }
     
     LazyColumn(
         modifier = Modifier
@@ -116,8 +144,10 @@ fun PlateCheckScreen(
         item {
             PlateCheckHeroSection(
                 selectedProvince = selectedProvince,
-                headPlat = headPlat,
+                headPlat = if(selectedProvince?.plateCodes?.size == 1) selectedProvince!!.plateCodes[0] else headPlat,
                 onHeadPlatChange = { headPlat = it },
+                selectedPlateCode = selectedPlateCode,
+                onSelectedPlateCodeChange = { selectedPlateCode = it },
                 bodyPlat = bodyPlat,
                 onBodyPlatChange = { bodyPlat = it },
                 tailPlat = tailPlat,
@@ -253,6 +283,8 @@ fun PlateCheckHeroSection(
     selectedProvince: com.paondev.infoplat.data.Province?,
     headPlat: String,
     onHeadPlatChange: (String) -> Unit,
+    selectedPlateCode: String,
+    onSelectedPlateCodeChange: (String) -> Unit,
     bodyPlat: String,
     onBodyPlatChange: (String) -> Unit,
     tailPlat: String,
@@ -277,6 +309,8 @@ fun PlateCheckHeroSection(
     val showCaptcha = isJatim && captchaData != null
     val showNoRangka = selectedProvince?.withNoRangka == true
     val showNoNik = selectedProvince?.withNik == true
+    val isSinglePlate = selectedProvince?.plateCodes?.size == 1
+    val isMultiplePlate = selectedProvince?.plateCodes?.size ?: 0 > 1
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -318,8 +352,13 @@ fun PlateCheckHeroSection(
                 } else {
                     // Show license plate input
                     LicensePlateInput(
+                        isSinglePlate = isSinglePlate,
+                        isMultiplePlate = isMultiplePlate,
                         headPlat = headPlat,
                         onHeadPlatChange = onHeadPlatChange,
+                        plateCodes = selectedProvince?.plateCodes ?: emptyList(),
+                        selectedPlateCode = selectedPlateCode,
+                        onSelectedPlateCodeChange = onSelectedPlateCodeChange,
                         bodyPlat = bodyPlat,
                         onBodyPlatChange = onBodyPlatChange,
                         tailPlat = tailPlat,
@@ -474,45 +513,6 @@ fun PlateCheckHeroSection(
     }
 }
 
-@Composable
-fun LicensePlateInput(
-    headPlat: String,
-    onHeadPlatChange: (String) -> Unit,
-    bodyPlat: String,
-    onBodyPlatChange: (String) -> Unit,
-    tailPlat: String,
-    onTailPlatChange: (String) -> Unit
-) {
-    Box {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-                .padding(4.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.background)
-                .border(2.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(8.dp)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            PlateTextField(placeholder = "B", length = 2, modifier = Modifier.width(50.dp), defaultValue = headPlat, onValueChange = onHeadPlatChange)
-            Text(
-                "•",
-                color = MaterialTheme.colorScheme.tertiary,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
-            )
-            PlateTextField(placeholder = "1234", length = 4, modifier = Modifier.width(90.dp), defaultValue = bodyPlat, onValueChange = onBodyPlatChange)
-            Text(
-                "•",
-                color = MaterialTheme.colorScheme.tertiary,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
-            )
-            PlateTextField(placeholder = "XYZ", length = 3, modifier = Modifier.width(60.dp), defaultValue = tailPlat, onValueChange = onTailPlatChange)
-        }
-    }
-}
 
 @Composable
 fun Bolt(modifier: Modifier) {
@@ -521,44 +521,6 @@ fun Bolt(modifier: Modifier) {
             .size(6.dp)
             .background(MaterialTheme.colorScheme.tertiary, CircleShape)
             .shadow(1.dp, CircleShape)
-    )
-}
-
-@Composable
-fun PlateTextField(placeholder: String, length: Int, modifier: Modifier, defaultValue: String = "", onValueChange: (String) -> Unit = {}) {
-    var text by remember { mutableStateOf(defaultValue) }
-    BasicTextField(
-        value = text,
-        onValueChange = { 
-            if (it.length <= length) {
-                text = it.uppercase()
-                onValueChange(it.uppercase())
-            }
-        },
-        modifier = modifier,
-        textStyle = TextStyle(
-            color = MaterialTheme.colorScheme.tertiary,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            textAlign = TextAlign.Center
-        ),
-        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.tertiary),
-        decorationBox = { innerTextField ->
-            Box(contentAlignment = Alignment.Center) {
-                if (text.isEmpty()) {
-                    Text(
-                        placeholder,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
-                innerTextField()
-            }
-        }
     )
 }
 

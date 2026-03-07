@@ -3,17 +3,31 @@ package com.paondev.infoplat.ui.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import com.google.gson.Gson
-import javax.inject.Inject
-import com.paondev.infoplat.data.api.*
+import com.paondev.infoplat.data.api.AvailablePaymentMethods
+import com.paondev.infoplat.data.api.BaliPajakResponse
+import com.paondev.infoplat.data.api.BangkaBelitungPajakResponse
+import com.paondev.infoplat.data.api.BantenPajakResponse
+import com.paondev.infoplat.data.api.DiypPajakResponse
+import com.paondev.infoplat.data.api.InfoPembayaran
+import com.paondev.infoplat.data.api.InfoPkbPnpb
+import com.paondev.infoplat.data.api.InfoTransaksi
+import com.paondev.infoplat.data.api.JabarPajakData
+import com.paondev.infoplat.data.api.JabarPajakResponse
+import com.paondev.infoplat.data.api.JatimPkbResponse
+import com.paondev.infoplat.data.api.LampungPajakResponse
+import com.paondev.infoplat.data.api.MasaPajak
+import com.paondev.infoplat.data.api.PnpbDetail
+import com.paondev.infoplat.data.api.RiauPajakResponse
+import com.paondev.infoplat.data.api.TaxDetail
+import com.paondev.infoplat.data.api.UniversalPajakResponse
 import com.paondev.infoplat.data.repository.ProvinceRepository
-import kotlinx.coroutines.Dispatchers
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 @HiltViewModel
 class VehicleDetailViewModel @Inject constructor(

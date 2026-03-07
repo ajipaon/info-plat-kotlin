@@ -6,7 +6,6 @@ import com.google.gson.Gson
 import com.paondev.infoplat.data.api.JabarPajakResponse
 import com.paondev.infoplat.data.api.JatimPkbResponse
 import com.paondev.infoplat.data.locale.InfoPlatDao
-import com.paondev.infoplat.model.History
 import com.paondev.infoplat.ui.screen.RecentSearch
 import com.paondev.infoplat.ui.screen.VehicleStatus
 import dagger.hilt.android.lifecycle.HiltViewModel

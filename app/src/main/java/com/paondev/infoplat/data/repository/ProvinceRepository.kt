@@ -1,19 +1,12 @@
 package com.paondev.infoplat.data.repository
 
-import androidx.compose.ui.text.toUpperCase
 import com.google.gson.Gson
 import com.paondev.infoplat.BuildConfig
 import com.paondev.infoplat.data.Province
-import com.paondev.infoplat.data.api.BantenPajakResponse
+import com.paondev.infoplat.data.allProvinces
 import com.paondev.infoplat.data.api.BaliPajakResponse
 import com.paondev.infoplat.data.api.BangkaBelitungPajakResponse
-import com.paondev.infoplat.data.api.LampungPajakResponse
-import com.paondev.infoplat.data.api.RiauPajakResponse
-import com.paondev.infoplat.data.api.SumbarPajakResponse
-import com.paondev.infoplat.data.api.UniversalPajakRequest
-import com.paondev.infoplat.data.api.UniversalPajakResponse
-import com.paondev.infoplat.data.api.OcrRequest
-import com.paondev.infoplat.data.api.OcrResponse
+import com.paondev.infoplat.data.api.BantenPajakResponse
 import com.paondev.infoplat.data.api.DiypPajakResponse
 import com.paondev.infoplat.data.api.InfoPlatApi
 import com.paondev.infoplat.data.api.JabarPajakRequest
@@ -21,8 +14,13 @@ import com.paondev.infoplat.data.api.JabarPajakResponse
 import com.paondev.infoplat.data.api.JatimCaptchaResponse
 import com.paondev.infoplat.data.api.JatimPkbRequest
 import com.paondev.infoplat.data.api.JatimPkbResponse
+import com.paondev.infoplat.data.api.LampungPajakResponse
+import com.paondev.infoplat.data.api.OcrRequest
+import com.paondev.infoplat.data.api.OcrResponse
+import com.paondev.infoplat.data.api.RiauPajakResponse
+import com.paondev.infoplat.data.api.UniversalPajakRequest
+import com.paondev.infoplat.data.api.UniversalPajakResponse
 import com.paondev.infoplat.data.api.toProvince
-import com.paondev.infoplat.data.allProvinces
 import com.paondev.infoplat.data.locale.InfoPlatDao
 import com.paondev.infoplat.di.JatimApi
 import com.paondev.infoplat.di.MainApi
@@ -30,11 +28,8 @@ import com.paondev.infoplat.model.History
 import com.paondev.infoplat.utils.generateToket
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.security.MessageDigest
 import java.util.Date
 import java.util.Locale
-import javax.inject.Inject
-import javax.inject.Singleton
 
 class ProvinceRepository(
     @MainApi private val api: InfoPlatApi,

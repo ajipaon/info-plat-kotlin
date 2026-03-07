@@ -1,13 +1,14 @@
 package com.paondev.infoplat.data
 
-import kotlin.collections.emptyList
-
 data class Province(
     val name: String,
     val kode: String,
     val isActive: Boolean,
     val withNoRangka: Boolean,
-    val withNik: Boolean
+    val withNik: Boolean,
+    val plateCodes: List<String>
 )
 
-val allProvinces : List<Province> = emptyList()
+// Data provinsi sekarang diambil dari API melalui ProvinceResponse.toProvince()
+// Fallback mapping untuk plateCodes tersedia di ProvinceApiResponse.kt
+val allProvinces: List<Province> = emptyList()

@@ -1,7 +1,6 @@
 package com.paondev.infoplat.data.api
 
 import com.google.gson.annotations.SerializedName
-import retrofit2.http.Field
 
 data class DiypPajakRequest(
     @field:SerializedName("nomer")

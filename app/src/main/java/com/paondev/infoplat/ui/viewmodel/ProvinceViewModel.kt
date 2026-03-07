@@ -2,11 +2,11 @@ package com.paondev.infoplat.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.paondev.infoplat.config.DataStoreManager
 import com.paondev.infoplat.data.Province
 import com.paondev.infoplat.data.api.JatimCaptchaResponse
 import com.paondev.infoplat.data.api.JatimPkbResponse
 import com.paondev.infoplat.data.repository.ProvinceRepository
-import com.paondev.infoplat.config.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -1,7 +1,7 @@
 package com.paondev.infoplat.data.api
 
-import com.paondev.infoplat.model.History
 import com.paondev.infoplat.BuildConfig
+import com.paondev.infoplat.model.History
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Field
