@@ -234,21 +234,21 @@ fun PlateCheckScreen(
                 )
             }
 
-            items(recentHistory) { search ->
-                RecentSearchCard(
-                    search = search,
-                    onClick = {
-                        try {
-                            if (search.data.isNotEmpty()) {
-                                val response = Gson().fromJson(search.data, JabarPajakResponse::class.java)
-                                navController.navigate(VehicleDetailDestination.createRoute(response))
-                            }
-                        } catch (e: Exception) {
-                            // Handle error silently
-                        }
-                    }
-                )
-            }
+//            items(recentHistory) { search ->
+//                RecentSearchCard(
+//                    search = search,
+//                    onClick = {
+//                        try {
+//                            if (search.data.isNotEmpty()) {
+//                                val response = Gson().fromJson(search.data, JabarPajakResponse::class.java)
+//                                navController.navigate(VehicleDetailDestination.createRoute(response))
+//                            }
+//                        } catch (e: Exception) {
+//                            // Handle error silently
+//                        }
+//                    }
+//                )
+//            }
         }
 
         item {
@@ -308,7 +308,7 @@ fun PlateCheckHeroSection(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 textAlign = TextAlign.Center
             ),
-            modifier = Modifier.padding(top = 8.dp, bottom = 32.dp, start = 16.dp, end = 16.dp)
+            modifier = Modifier.padding(top = 8.dp, bottom = 12.dp, start = 16.dp, end = 16.dp)
         )
 
         Card(

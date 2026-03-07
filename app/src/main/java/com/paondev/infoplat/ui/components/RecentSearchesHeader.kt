@@ -23,7 +23,7 @@ fun RecentSearchesHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Recent Searches",
+            text = "History pencarian",
             style = TextStyle(
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
