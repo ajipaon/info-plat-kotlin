@@ -1136,7 +1136,7 @@ class VehicleDetailViewModel @Inject constructor(
         }
     }
     
-    private fun convertJatimToJabar(jatimResponse: com.paondev.infoplat.data.api.JatimPkbResponse): JabarPajakResponse {
+    private fun convertJatimToJabar(jatimResponse: JatimPkbResponse): JabarPajakResponse {
         val data = jatimResponse.data
         return if (data?.identitas != null) {
             val pkbValue = data.biayaPenul1Tahunan?.pkb ?: "0"

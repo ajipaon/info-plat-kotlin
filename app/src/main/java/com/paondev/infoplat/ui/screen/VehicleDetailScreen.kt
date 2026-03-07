@@ -75,14 +75,34 @@ fun formatCurrency(amount: String): String {
 
 // Helper function to format date
 fun formatDate(dateString: String): String {
-    return try {
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("dd MMMM yyyy", Locale("id"))
-        val date = inputFormat.parse(dateString)
-        date?.let { outputFormat.format(it) } ?: dateString
-    } catch (e: Exception) {
-        dateString
+    val possibleFormats = listOf(
+        "yyyy-MM-dd",
+        "dd-MM-yyyy",
+        "MM/dd/yyyy",
+        "dd/MM/yyyy",
+        "yyyy/MM/dd",
+        "dd MMM yyyy",
+        "MMM dd, yyyy",
+        "yyyy-MM-dd HH:mm:ss",
+        "dd-MM-yyyy HH:mm:ss",
+        "yyyy-MM-dd'T'HH:mm:ss",
+        "yyyy-MM-dd'T'HH:mm:ssZ"
+    )
+
+    val outputFormat = SimpleDateFormat("dd MMMM yyyy", Locale("id"))
+
+    for (format in possibleFormats) {
+        try {
+            val inputFormat = SimpleDateFormat(format, Locale.getDefault())
+            inputFormat.isLenient = false  // Strict parsing agar tidak salah parse
+            val date = inputFormat.parse(dateString)
+            if (date != null) return outputFormat.format(date)
+        } catch (e: Exception) {
+            continue
+        }
     }
+
+    return dateString // Fallback: kembalikan string asli jika semua format gagal
 }
 
 @Composable
