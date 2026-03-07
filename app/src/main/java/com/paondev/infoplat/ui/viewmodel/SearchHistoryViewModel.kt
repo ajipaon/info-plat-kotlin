@@ -6,8 +6,8 @@ import com.google.gson.Gson
 import com.paondev.infoplat.data.api.JabarPajakResponse
 import com.paondev.infoplat.data.api.JatimPkbResponse
 import com.paondev.infoplat.data.locale.InfoPlatDao
-import com.paondev.infoplat.ui.screen.RecentSearch
-import com.paondev.infoplat.ui.screen.VehicleStatus
+import com.paondev.infoplat.model.RecentSearch
+import com.paondev.infoplat.model.VehicleStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

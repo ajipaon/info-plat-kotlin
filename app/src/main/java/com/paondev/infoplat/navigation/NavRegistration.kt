@@ -10,6 +10,7 @@ import androidx.navigation.navArgument
 import com.paondev.infoplat.ui.screen.PlateCheckScreen
 import com.paondev.infoplat.ui.screen.SearchHistoryScreen
 import com.paondev.infoplat.ui.screen.VehicleDetailScreen
+import com.paondev.infoplat.ui.screen.VehicleHistoryScreen
 
 fun NavGraphBuilder.navRegistration(navController: NavController) {
 
@@ -24,6 +25,26 @@ fun NavGraphBuilder.navRegistration(navController: NavController) {
         SearchHistoryScreen(
             navController = navController
         )
+    }
+
+    composable(
+        route = VehicleHistoryDestination.route + "?data={data}",
+        arguments = listOf(
+            navArgument("data") {
+                type = NavType.StringType
+                nullable = true
+            }
+        )
+    ) { backStackEntry ->
+        val dataParam = backStackEntry.arguments?.getString("data")
+        val jabarPajakData = VehicleHistoryDestination.parseData(dataParam)
+        
+        if (jabarPajakData != null) {
+            VehicleHistoryScreen(
+                navController = navController,
+                jabarPajakData = jabarPajakData
+            )
+        }
     }
 
     composable(

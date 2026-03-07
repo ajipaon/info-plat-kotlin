@@ -118,3 +118,30 @@ data class PlateParameters(
     val noRangka: String,
     val noNik: String
 )
+
+object VehicleHistoryDestination: Destination {
+    override val route = "VehicleHistory"
+    override val title = "Vehicle History"
+    override val icon = Icons.Filled.Home
+    
+    private const val DATA_PARAM = "data"
+    
+    // Create route with pre-converted JabarPajakResponse data
+    fun createRoute(data: JabarPajakResponse): String {
+        val gson = Gson()
+        val json = gson.toJson(data)
+        val encodedData = Uri.encode(json)
+        return "$route?$DATA_PARAM=$encodedData"
+    }
+    
+    // Parse data from route parameters
+    fun parseData(encodedData: String?): JabarPajakResponse? {
+        return try {
+            val decodedData = Uri.decode(encodedData)
+            val gson = Gson()
+            gson.fromJson(decodedData, JabarPajakResponse::class.java)
+        } catch (e: Exception) {
+            null
+        }
+    }
+}

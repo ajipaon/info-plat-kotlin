@@ -47,7 +47,7 @@ import androidx.navigation.NavController
 import com.google.gson.Gson
 import com.paondev.infoplat.data.api.JabarPajakResponse
 import com.paondev.infoplat.data.api.JatimPkbResponse
-import com.paondev.infoplat.navigation.VehicleDetailDestination
+import com.paondev.infoplat.navigation.VehicleHistoryDestination
 import com.paondev.infoplat.ui.viewmodel.HistoryDisplayItem
 import com.paondev.infoplat.ui.viewmodel.SearchHistoryViewModel
 
@@ -158,7 +158,7 @@ fun SearchHistoryScreen(
                                 // Fallback: try parsing as Jabar response
                                 Gson().fromJson(item.responseData, JabarPajakResponse::class.java)
                             }
-                            val route = VehicleDetailDestination.createRoute(response)
+                            val route = VehicleHistoryDestination.createRoute(response)
                             navController.navigate(route)
                         },
                         onDelete = { viewModel.deleteHistoryItem(item.id) }
