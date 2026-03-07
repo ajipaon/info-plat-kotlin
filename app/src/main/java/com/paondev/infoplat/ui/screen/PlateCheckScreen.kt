@@ -39,6 +39,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -114,20 +115,20 @@ fun PlateCheckScreen(
     val coroutineScope = rememberCoroutineScope()
 
     // Reset states when province changes
-//    LaunchedEffect(selectedProvince?.kode) {
-//        captchaCode = ""
-//        noRangka = ""
-//        noNik = ""
-//        errorMessage = null
-//        headPlat = ""
-//        selectedPlateCode = ""
-//
-//        // Auto-fill headPlat for single plate provinces
-//        if (selectedProvince?.plateCodes?.size == 1) {
-//            headPlat = selectedProvince!!.plateCodes[0]
-//            selectedPlateCode = selectedProvince!!.plateCodes[0]
-//        }
-//    }
+    LaunchedEffect(selectedProvince) {
+        captchaCode = ""
+        noRangka = ""
+        noNik = ""
+        errorMessage = null
+        headPlat = ""
+        selectedPlateCode = ""
+
+        // Auto-fill headPlat for single plate provinces
+        if (selectedProvince?.plateCodes?.size == 1) {
+            headPlat = selectedProvince!!.plateCodes[0]
+            selectedPlateCode = selectedProvince!!.plateCodes[0]
+        }
+    }
     
     LazyColumn(
         modifier = Modifier
@@ -144,7 +145,7 @@ fun PlateCheckScreen(
         item {
             PlateCheckHeroSection(
                 selectedProvince = selectedProvince,
-                headPlat = if(selectedProvince?.plateCodes?.size == 1) selectedProvince!!.plateCodes[0] else headPlat,
+                headPlat = headPlat ,
                 onHeadPlatChange = { headPlat = it },
                 selectedPlateCode = selectedPlateCode,
                 onSelectedPlateCodeChange = { selectedPlateCode = it },

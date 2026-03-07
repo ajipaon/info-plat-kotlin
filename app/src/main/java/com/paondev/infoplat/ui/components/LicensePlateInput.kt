@@ -69,9 +69,9 @@ fun LicensePlateInput(
                     length = 4,
                     modifier = Modifier.width(70.dp),
                     defaultValue = headPlat,
-                    onValueChange = { },
+                    onValueChange = {  },
                     enabled = false,
-                    key = "head-$isSinglePlate"
+                    key = "head-$isSinglePlate-$selectedPlateCode"
                 )
             } else if (isMultiplePlate) {
                 // Dropdown for multiple plate codes

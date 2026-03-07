@@ -510,9 +510,9 @@ fun SpecColorItem(
 fun TaxStatusCard(data: com.paondev.infoplat.data.api.JabarPajakData?) {
     val stnkExpiry = data?.infoPkbPnpb?.tanggalStnk?.let { formatDate(it) } ?: "15 June 2025"
     val taxYear = if (data?.masaPajak?.tanggalBerlakuSampai != null && data.masaPajak.tanggalBerlakuSampai.length >= 4) {
-        data.masaPajak.tanggalBerlakuSampai.substring(0, 4)
+        formatDate(data.masaPajak.tanggalBerlakuSampai)
     } else {
-        "2024"
+        "-"
     }
     val statusText = data?.keterangan ?: "UNKNOWN"
     val isPaid = data?.canBePaid == false
