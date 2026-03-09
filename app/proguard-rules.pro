@@ -19,22 +19,3 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
-# Retrofit
--keep class retrofit2.** { *; }
-
-# OkHttp
--dontwarn okhttp3.**
--keep class okhttp3.** { *; }
-
-# Gson model
--keepclassmembers class * {
-    @com.google.gson.annotations.SerializedName <fields>;
-}
-
-# Keep model
--keep class com.paondev.infoplat.model.** { *; }
-
-# annotation
--keepattributes *Annotation*
--keepattributes Signature
--keepattributes SourceFile,LineNumberTable
