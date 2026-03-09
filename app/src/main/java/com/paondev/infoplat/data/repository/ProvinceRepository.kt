@@ -1,5 +1,6 @@
 package com.paondev.infoplat.data.repository
 
+import android.util.Log
 import com.google.gson.Gson
 import com.paondev.infoplat.BuildConfig
 import com.paondev.infoplat.data.Province
@@ -48,6 +49,7 @@ class ProvinceRepository(
                 }
             } catch (e: Exception) {
                 // Fallback ke data hardcoded jika API gagal
+                Log.e("getProvinces", "Error fetching getProvinces data", e)
                 Result.success(allProvinces)
             }
         }
